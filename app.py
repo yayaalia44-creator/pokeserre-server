@@ -27,7 +27,7 @@ class Mesure(db.Model):
     serre_id  = db.Column(db.Integer, db.ForeignKey('serre.id'), nullable=False)
  
 # --- ADMIN ---
-ADMIN_PASSWORD = "pokeserre_admin"
+ADMIN_PASSWORD = "Yasser44340"
  
 # --- ROUTES ESP32 ---
 @app.route('/api/data', methods=['POST'])
