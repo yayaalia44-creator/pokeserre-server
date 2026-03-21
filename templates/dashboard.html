@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="30">
+    <title>{{ serre.nom }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            min-height: 100vh;
+            font-family: 'Share Tech Mono','Courier New',monospace;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .name {
+            font-family: 'Press Start 2P',monospace;
+            font-size: 9px;
+            color: #fff;
+            letter-spacing: 2px;
+        }
+
+        .bat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bat-body {
+            width: 40px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 3px;
+            padding: 2px;
+            display: flex;
+            align-items: center;
+        }
+
+        .bat-fill {
+            height: 100%;
+            border-radius: 1px;
+        }
+
+        .bat-tip {
+            width: 4px;
+            height: 9px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 0 2px 2px 0;
+        }
+
+        .bat-pct {
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+
+        .divider {
+            height: 5px;
+            background: linear-gradient(90deg,#E3000F 47%,#111 47%,#111 50%,#fff 50%,#fff 53%,#111 53%);
+        }
+
+        .body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 20px;
+            gap: 40px;
+        }
+
+        .gauge-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .gauge-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .gauge-track {
+            width: 36px;
+            height: 200px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.12);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gauge-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-radius: 16px;
+        }
+
+        .gauge-ticks {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 200px;
+        }
+
+            .gauge-ticks span {
+                font-size: 9px;
+                color: rgba(255,255,255,0.2);
+            }
+
+        .gauge-lbl {
+            font-size: 9px;
+            color: rgba(255,255,255,0.25);
+            letter-spacing: 2px;
+            margin-top: 4px;
+        }
+
+        .center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        @keyframes pb-pulse {
+            0%,100% {
+                box-shadow: 0 0 0 0 rgba(227,0,15,0.4)
+            }
+
+            50% {
+                box-shadow: 0 0 0 16px rgba(227,0,15,0)
+            }
+        }
+
+        .ball {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            border: 5px solid #fff;
+            position: relative;
+            overflow: hidden;
+            animation: pb-pulse 3s ease-in-out infinite;
+        }
+
+        .ball-top {
+            background: #E3000F;
+            height: 50%;
+        }
+
+        .ball-bot {
+            background: #1a1a1a;
+            height: 50%;
+        }
+
+        .ball::after {
+            content: '';
+            position: absolute;
+            top: 47%;
+            left: 0;
+            right: 0;
+            height: 6%;
+            background: #111;
+        }
+
+        .ball-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            width: 22px;
+            height: 22px;
+            background: #fff;
+            border: 4px solid #111;
+            border-radius: 50%;
+            z-index: 2;
+        }
+
+        .pb-title {
+            font-family: 'Press Start 2P',monospace;
+            font-size: 11px;
+            color: #fff;
+            letter-spacing: 3px;
+        }
+
+        .hum {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .hum-val {
+            font-family: 'Press Start 2P',monospace;
+            font-size: 56px;
+            line-height: 1;
+        }
+
+        .hum-unit {
+            font-size: 20px;
+            color: rgba(255,255,255,0.3);
+        }
+
+        .status {
+            font-size: 11px;
+            letter-spacing: 3px;
+            padding: 6px 16px;
+            border-radius: 3px;
+            border: 1px solid;
+        }
+
+        .hum-lbl {
+            font-size: 10px;
+            color: rgba(255,255,255,0.25);
+            letter-spacing: 3px;
+        }
+
+        .right {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 6px;
+            padding: 12px 16px;
+            min-width: 150px;
+        }
+
+        .card-lbl {
+            font-size: 8px;
+            color: rgba(255,255,255,0.25);
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+
+        .card-val {
+            font-family: 'Press Start 2P',monospace;
+            font-size: 15px;
+            color: #fff;
+        }
+
+        .card-sub {
+            font-size: 9px;
+            color: rgba(255,255,255,0.25);
+            margin-top: 4px;
+        }
+
+        .bottom {
+            padding: 16px 24px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chart-lbl {
+            font-size: 8px;
+            color: rgba(255,255,255,0.25);
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .chart-legend {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .chart-wrap {
+            height: 90px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.07);
+            overflow: hidden;
+        }
+
+        .footer {
+            padding: 10px 24px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 9px;
+            color: rgba(255,255,255,0.2);
+            letter-spacing: 1px;
+        }
+
+        .footer-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .no-data {
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+            font-size: 12px;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="name">{{ serre.nom }}</div>
+        {% if derniere %}
+        <div class="bat">
+            <div class="bat-body"><div class="bat-fill" id="bat-fill"></div></div>
+            <div class="bat-tip"></div>
+            <div class="bat-pct" id="bat-pct"></div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="divider"></div>
+    {% if derniere %}
+    <div class="body">
+        <div class="gauge-col">
+            <div class="gauge-row">
+                <div class="gauge-track"><div class="gauge-fill" id="gauge-fill"></div></div>
+                <div class="gauge-ticks"><span>100</span><span>75</span><span>50</span><span>25</span><span>0</span></div>
+            </div>
+            <div class="gauge-lbl">HUMIDITÉ</div>
+        </div>
+        <div class="center">
+            <div class="ball"><div class="ball-top"></div><div class="ball-bot"></div><div class="ball-btn"></div></div>
+            <div class="pb-title">POKÉSERRE</div>
+            <div class="hum"><span class="hum-val" id="hum-val">{{ derniere.humidite|int }}</span><span class="hum-unit">%</span></div>
+            <div class="status" id="status"></div>
+            <div class="hum-lbl">Humidité du sol</div>
+        </div>
+        <div class="right">
+            <div class="card">
+                <div class="card-lbl">TEMPÉRATURE</div>
+                <div class="card-val">-- °C</div>
+                <div class="card-sub">capteur à venir</div>
+            </div>
+            <div class="card">
+                <div class="card-lbl">DERNIÈRE MÀJO</div>
+                <div class="card-val" style="font-size:11px;">{{ derniere.date.strftime('%d/%m/%Y') }}</div>
+                <div class="card-sub">{{ derniere.date.strftime('%H:%M:%S') }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="bottom">
+        <div class="chart-lbl">
+            HISTORIQUE 24H
+            <div class="chart-legend"><div class="legend-dot" style="background:#2979FF;"></div><span>Humidité</span></div>
+            <div class="chart-legend"><div class="legend-dot" style="background:#E3000F;opacity:0.4;"></div><span style="opacity:0.4;">Température (à venir)</span></div>
+        </div>
+        <div class="chart-wrap">
+            <svg width="100%" height="90" preserveAspectRatio="none" viewBox="0 0 700 90">
+                <line x1="0" y1="22" x2="700" y2="22" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                <line x1="0" y1="45" x2="700" y2="45" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                <line x1="0" y1="67" x2="700" y2="67" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                <text x="4" y="20" fill="rgba(255,255,255,0.15)" font-size="8">100</text>
+                <text x="4" y="43" fill="rgba(255,255,255,0.15)" font-size="8">50</text>
+                <text x="4" y="66" fill="rgba(255,255,255,0.15)" font-size="8">0</text>
+                <polyline id="chart-line" fill="none" stroke="#2979FF" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+                <polyline id="chart-area" fill="rgba(41,121,255,0.08)" stroke="none" />
+                <g id="chart-points"></g>
+                <g id="chart-labels"></g>
+            </svg>
+        </div>
+    </div>
+    {% else %}
+    <div class="no-data">Aucune donnée reçue — en attente de l'ESP32...</div>
+    {% endif %}
+    <div class="divider"></div>
+    <div class="footer">
+        <span>ESP32-C3 SUPERMINI · MICROPYTHON</span>
+        <div class="footer-right">
+            <span>AUTO-REFRESH 30S</span>
+            <span style="color:rgba(255,255,255,0.1);">·</span>
+            <span style="color:rgba(255,255,255,0.35);">MESURE / 3H</span>
+        </div>
+    </div>
+    {% if derniere %}
+    <script>
+var h = {{ derniere.humidite }};
+var b = {{ derniere.batterie }};
+var historique = [{% for m in mesures %}{{ m.humidite }}{% if not loop.last %},{% endif %}{% endfor %}];
+var couleur, statusTxt, statusBg, statusBorder;
+if (h < 40) { couleur='#e67e22'; statusTxt='⚠ TROP SEC — Arroser !'; statusBg='rgba(230,126,34,0.1)'; statusBorder='rgba(230,126,34,0.4)'; }
+else if (h > 80) { couleur='#2979FF'; statusTxt='⚠ TROP HUMIDE — Laisser sécher'; statusBg='rgba(41,121,255,0.1)'; statusBorder='rgba(41,121,255,0.4)'; }
+else { couleur='#00C853'; statusTxt='✓ HUMIDITÉ OPTIMALE'; statusBg='rgba(0,200,83,0.1)'; statusBorder='rgba(0,200,83,0.4)'; }
+document.getElementById('hum-val').style.color = couleur;
+var s = document.getElementById('status');
+s.textContent = statusTxt; s.style.color = couleur; s.style.background = statusBg; s.style.borderColor = statusBorder;
+var gf = document.getElementById('gauge-fill');
+gf.style.height = h+'%'; gf.style.background = couleur;
+var bCouleur = b < 20 ? '#E3000F' : b < 50 ? '#FFD600' : '#00C853';
+document.getElementById('bat-fill').style.width = b+'%';
+document.getElementById('bat-fill').style.background = bCouleur;
+document.getElementById('bat-pct').textContent = b+'%';
+document.getElementById('bat-pct').style.color = bCouleur;
+if (historique.length > 1) {
+  var n = historique.length, xs = [], pts = [], apts = [];
+  for (var i = 0; i < n; i++) {
+    var x = Math.round(20+(i/(n-1))*660), y = Math.round(80-(historique[i]/100)*70);
+    xs.push(x); pts.push(x+','+y); apts.push(x+','+y);
+  }
+  apts.push(xs[n-1]+',82'); apts.push(xs[0]+',82');
+  document.getElementById('chart-line').setAttribute('points', pts.join(' '));
+  document.getElementById('chart-area').setAttribute('points', apts.join(' '));
+  var cp = document.getElementById('chart-points'), cl = document.getElementById('chart-labels');
+  for (var i = 0; i < n; i++) {
+    var x = xs[i], y = Math.round(80-(historique[i]/100)*70);
+    var c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',x); c.setAttribute('cy',y); c.setAttribute('r','3.5'); c.setAttribute('fill','#2979FF');
+    cp.appendChild(c);
+    var t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',x); t.setAttribute('y','88'); t.setAttribute('fill','rgba(255,255,255,0.2)');
+    t.setAttribute('font-size','8'); t.setAttribute('text-anchor','middle');
+    t.textContent = (-(n-1-i)*3) === 0 ? 'now' : (-(n-1-i)*3)+'h';
+    cl.appendChild(t);
+  }
+}
+    </script>
+    {% endif %}
+</body>
+</html>

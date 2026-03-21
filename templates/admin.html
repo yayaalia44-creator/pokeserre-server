@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="60">
+    <title>Admin — Pokéserre</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            min-height: 100vh;
+            font-family: 'Share Tech Mono','Courier New',monospace;
+            color: #fff;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .title {
+            font-family: 'Press Start 2P',monospace;
+            font-size: 9px;
+            color: #E3000F;
+            letter-spacing: 2px;
+        }
+
+        .logout {
+            font-size: 9px;
+            color: rgba(255,255,255,0.3);
+            text-decoration: none;
+            letter-spacing: 1px;
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 6px 12px;
+            border-radius: 3px;
+        }
+
+            .logout:hover {
+                color: #fff;
+                border-color: rgba(255,255,255,0.4);
+            }
+
+        .divider {
+            height: 5px;
+            background: linear-gradient(90deg,#E3000F 47%,#111 47%,#111 50%,#fff 50%,#fff 53%,#111 53%);
+        }
+
+        .content {
+            padding: 24px;
+        }
+
+        .section-title {
+            font-family: 'Press Start 2P',monospace;
+            font-size: 8px;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        /* Ajouter serre */
+        .add-form {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+            .add-form input {
+                background: rgba(255,255,255,0.06);
+                border: 1px solid rgba(255,255,255,0.15);
+                color: #fff;
+                font-family: 'Share Tech Mono',monospace;
+                font-size: 12px;
+                padding: 8px 12px;
+                border-radius: 3px;
+                flex: 1;
+            }
+
+            .add-form button {
+                background: #E3000F;
+                color: #fff;
+                border: none;
+                font-family: 'Press Start 2P',monospace;
+                font-size: 7px;
+                padding: 10px 14px;
+                cursor: pointer;
+                border-radius: 3px;
+                letter-spacing: 1px;
+            }
+
+                .add-form button:hover {
+                    background: #b00009;
+                }
+
+        /* Grille serres */
+        .serres-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(280px,1fr));
+            gap: 16px;
+        }
+
+        .serre-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 20px;
+            transition: border-color .2s;
+        }
+
+            .serre-card:hover {
+                border-color: rgba(255,255,255,0.2);
+            }
+
+        .serre-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .serre-nom {
+            font-family: 'Press Start 2P',monospace;
+            font-size: 9px;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .serre-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .serre-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .serre-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .serre-lbl {
+            font-size: 9px;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 1px;
+        }
+
+        .serre-val {
+            font-family: 'Press Start 2P',monospace;
+            font-size: 11px;
+        }
+
+        .serre-token {
+            font-size: 9px;
+            color: rgba(255,255,255,0.2);
+            margin-top: 10px;
+            word-break: break-all;
+            letter-spacing: 1px;
+        }
+
+        .serre-link {
+            display: block;
+            margin-top: 10px;
+            font-size: 9px;
+            color: #E3000F;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+            .serre-link:hover {
+                color: #ff4444;
+            }
+
+        .no-serre {
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+            font-size: 12px;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="topbar">
+        <div class="title">⚡ ADMIN — POKÉSERRE</div>
+        <a href="/admin/logout" class="logout">DÉCONNEXION</a>
+    </div>
+    <div class="divider"></div>
+
+    <div class="content">
+        <div class="section-title">▸ AJOUTER UNE SERRE</div>
+        <form class="add-form" method="POST" action="/admin/ajouter">
+            <input type="text" name="nom" placeholder="Nom de la serre (ex: Pokéserre N°1 de Yasser)" required />
+            <button type="submit">AJOUTER</button>
+        </form>
+
+        <div class="section-title">▸ MES SERRES ({{ data|length }})</div>
+
+        {% if data %}
+        <div class="serres-grid">
+            {% for item in data %}
+            {% set s = item.serre %}
+            {% set d = item.derniere %}
+            <div class="serre-card">
+                <div class="serre-header">
+                    <div class="serre-nom">{{ s.nom }}</div>
+                    <div class="serre-dot" style="background: {% if d %}#00C853{% else %}#888{% endif %};"></div>
+                </div>
+                <div class="serre-info">
+                    {% if d %}
+                    <div class="serre-row">
+                        <span class="serre-lbl">HUMIDITÉ</span>
+                        <span class="serre-val" style="color:{% if d.humidite < 40 %}#e67e22{% elif d.humidite > 80 %}#2979FF{% else %}#00C853{% endif %};">{{ d.humidite|int }}%</span>
+                    </div>
+                    <div class="serre-row">
+                        <span class="serre-lbl">BATTERIE</span>
+                        <span class="serre-val" style="color:{% if d.batterie < 20 %}#E3000F{% elif d.batterie < 50 %}#FFD600{% else %}#00C853{% endif %};">{{ d.batterie|int }}%</span>
+                    </div>
+                    <div class="serre-row">
+                        <span class="serre-lbl">DERNIÈRE MÀJ</span>
+                        <span class="serre-val" style="font-size:9px;">{{ d.date.strftime('%d/%m %H:%M') }}</span>
+                    </div>
+                    {% else %}
+                    <div class="serre-row">
+                        <span class="serre-lbl">STATUT</span>
+                        <span class="serre-val" style="color:rgba(255,255,255,0.3);font-size:9px;">EN ATTENTE</span>
+                    </div>
+                    {% endif %}
+                    <div class="serre-token">TOKEN : {{ s.token }}</div>
+                    <a href="/serre/{{ s.token }}" class="serre-link">→ VOIR LE DASHBOARD</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-serre">Aucune serre — ajoutes-en une ci-dessus !</div>
+        {% endif %}
+    </div>
+
+</body>
+</html>
