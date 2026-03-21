@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription — {{ serre.nom }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            min-height: 100vh;
+            font-family: 'Share Tech Mono','Courier New',monospace;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .divider {
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg,#E3000F 47%,#111 47%,#111 50%,#fff 50%,#fff 53%,#111 53%);
+            position: fixed;
+            top: 0;
+        }
+
+        .divider-bot {
+            position: fixed;
+            bottom: 0;
+        }
+
+        .box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            width: 100%;
+            max-width: 340px;
+            padding: 20px;
+        }
+
+        .ball {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ball-top {
+            background: #E3000F;
+            height: 50%;
+        }
+
+        .ball-bot {
+            background: #1a1a1a;
+            height: 50%;
+        }
+
+        .ball::after {
+            content: '';
+            position: absolute;
+            top: 47%;
+            left: 0;
+            right: 0;
+            height: 6%;
+            background: #111;
+        }
+
+        .ball-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border: 3px solid #111;
+            border-radius: 50%;
+            z-index: 2;
+        }
+
+        .title {
+            font-family: 'Press Start 2P',monospace;
+            font-size: 10px;
+            color: #fff;
+            letter-spacing: 2px;
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        .serre-badge {
+            font-size: 9px;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 2px;
+            text-align: center;
+            padding: 6px 14px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+
+        .form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+            .form input {
+                background: rgba(255,255,255,0.06);
+                border: 1px solid rgba(255,255,255,0.15);
+                color: #fff;
+                font-family: 'Share Tech Mono',monospace;
+                font-size: 13px;
+                padding: 12px 16px;
+                border-radius: 4px;
+                width: 100%;
+            }
+
+                .form input::placeholder {
+                    color: rgba(255,255,255,0.3);
+                }
+
+                .form input:focus {
+                    outline: none;
+                    border-color: rgba(255,255,255,0.4);
+                }
+
+            .form button {
+                background: #E3000F;
+                color: #fff;
+                border: none;
+                font-family: 'Press Start 2P',monospace;
+                font-size: 8px;
+                padding: 14px;
+                cursor: pointer;
+                border-radius: 4px;
+                letter-spacing: 2px;
+                width: 100%;
+            }
+
+                .form button:hover {
+                    background: #b00009;
+                }
+
+        .erreur {
+            font-size: 10px;
+            color: #E3000F;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .info {
+            font-size: 9px;
+            color: rgba(255,255,255,0.2);
+            letter-spacing: 1px;
+            text-align: center;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="divider"></div>
+    <div class="box">
+        <div class="ball">
+            <div class="ball-top"></div>
+            <div class="ball-bot"></div>
+            <div class="ball-btn"></div>
+        </div>
+        <div class="title">POKÉSERRE<br>INSCRIPTION</div>
+        <div class="serre-badge">{{ serre.nom }}</div>
+        <form class="form" method="POST">
+            <input type="text" name="username" placeholder="Choisis un nom d'utilisateur" required autofocus />
+            <input type="password" name="password" placeholder="Choisis un mot de passe" required />
+            <button type="submit">CRÉER MON COMPTE</button>
+        </form>
+        {% if erreur %}
+        <div class="erreur">⚠ {{ erreur }}</div>
+        {% endif %}
+        <div class="info">Ce lien est à usage unique.<br>Tu pourras te reconnecter sur<br>la page de connexion.</div>
+    </div>
+    <div class="divider divider-bot"></div>
+</body>
+</html>
