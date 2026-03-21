@@ -6,6 +6,7 @@
     <meta http-equiv="refresh" content="60">
     <title>Admin — Pokéserre</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -67,7 +68,6 @@
             margin-bottom: 16px;
         }
 
-        /* Ajouter serre */
         .add-form {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.08);
@@ -106,7 +106,6 @@
                     background: #b00009;
                 }
 
-        /* Grille serres */
         .serres-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill,minmax(280px,1fr));
@@ -189,6 +188,55 @@
                 color: #ff4444;
             }
 
+        .btn-qr {
+            margin-top: 8px;
+            background: rgba(41,121,255,0.15);
+            color: #2979FF;
+            border: 1px solid rgba(41,121,255,0.3);
+            font-family: 'Share Tech Mono',monospace;
+            font-size: 9px;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            width: 100%;
+            letter-spacing: 1px;
+        }
+
+            .btn-qr:hover {
+                background: rgba(41,121,255,0.25);
+            }
+
+        .btn-del {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: rgba(255,0,0,0.5);
+            font-size: 14px;
+            padding: 2px 4px;
+            line-height: 1;
+        }
+
+            .btn-del:hover {
+                color: #ff4444;
+            }
+
+        .qr-box {
+            display: none;
+            margin-top: 12px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+            .qr-box p {
+                font-size: 8px;
+                color: #111;
+                margin-top: 6px;
+                letter-spacing: 1px;
+                word-break: break-all;
+            }
+
         .no-serre {
             text-align: center;
             color: rgba(255,255,255,0.3);
@@ -220,14 +268,14 @@
             {% set s = item.serre %}
             {% set d = item.derniere %}
             <div class="serre-card">
-                <<div class="serre-header">
-                   <div class="serre-nom">{{ s.nom }}</div>
-                   <div style="display:flex;align-items:center;gap:8px;">
-                     <div class="serre-dot" style="background: {% if d %}#00C853{% else %}#888{% endif %};"></div>
-                     <form method="POST" action="/admin/supprimer/{{ s.id }}" onsubmit="return confirm('Supprimer {{ s.nom }} ?')" style="margin:0;">
-                       <button type="submit" style="background:none;border:none;cursor:pointer;color:rgba(255,0,0,0.5);font-size:14px;padding:2px 4px;line-height:1;" title="Supprimer">🗑</button>
-                     </form>
-                   </div>
+                <div class="serre-header">
+                    <div class="serre-nom">{{ s.nom }}</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div class="serre-dot" style="background:{% if d %}#00C853{% else %}#888{% endif %};"></div>
+                        <form method="POST" action="/admin/supprimer/{{ s.id }}" onsubmit="return confirm('Supprimer {{ s.nom }} ?')" style="margin:0;">
+                            <button type="submit" class="btn-del" title="Supprimer">🗑</button>
+                        </form>
+                    </div>
                 </div>
                 <div class="serre-info">
                     {% if d %}
@@ -250,7 +298,12 @@
                     </div>
                     {% endif %}
                     <div class="serre-token">TOKEN : {{ s.token }}</div>
-                    <a href="/serre/{{ s.token }}" class="serre-link">→ VOIR LE DASHBOARD</a>
+                    <a href="/serre" class="serre-link">→ VOIR LE DASHBOARD</a>
+                    <button class="btn-qr" onclick="toggleQR('{{ s.id }}', '{{ request.url_root }}register/{{ s.token }}')">QR CODE INSCRIPTION</button>
+                    <div class="qr-box" id="qr-box-{{ s.id }}">
+                        <div id="qr-{{ s.id }}"></div>
+                        <p>{{ request.url_root }}register/{{ s.token }}</p>
+                    </div>
                 </div>
             </div>
             {% endfor %}
@@ -260,5 +313,25 @@
         {% endif %}
     </div>
 
+    <script>
+        var qrCodes = {};
+        function toggleQR(id, url) {
+            var box = document.getElementById('qr-box-' + id);
+            if (box.style.display === 'none' || box.style.display === '') {
+                box.style.display = 'block';
+                if (!qrCodes[id]) {
+                    qrCodes[id] = new QRCode(document.getElementById('qr-' + id), {
+                        text: url,
+                        width: 140,
+                        height: 140,
+                        colorDark: '#111111',
+                        colorLight: '#ffffff'
+                    });
+                }
+            } else {
+                box.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
