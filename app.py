@@ -8,7 +8,7 @@ import os
 # --- CONFIGURATION ---
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pokeserre.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///pokeserre.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -144,6 +144,18 @@ def ajouter_serre():
     token = secrets.token_hex(8)
     serre = Serre(nom=nom, token=token)
     db.session.add(serre)
+    db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
+# --- SUPPRIMER SERRE (ADMIN) ---
+@app.route('/admin/supprimer/<int:serre_id>', methods=['POST'])
+def supprimer_serre(serre_id):
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    serre = Serre.query.get_or_404(serre_id)
+    Mesure.query.filter_by(serre_id=serre.id).delete()
+    Utilisateur.query.filter_by(serre_id=serre.id).delete()
+    db.session.delete(serre)
     db.session.commit()
     return redirect(url_for('admin_dashboard'))
 
