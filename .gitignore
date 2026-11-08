@@ -1,0 +1,4 @@
+# Fichiers propres à chaque carte (secrets) : jamais dans git
+config.json
+wifi_config.json
+__pycache__/
