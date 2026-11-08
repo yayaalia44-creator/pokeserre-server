@@ -41,6 +41,7 @@ body{background:#111;min-height:100vh;font-family:'Share Tech Mono','Courier New
   <div class="title">POKÉSERRE<br>INSCRIPTION</div>
   <div class="serre-badge">{{ serre.nom }}</div>
   <form class="form" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <input type="text" name="username" placeholder="Choisis un nom d'utilisateur" aria-label="Nom d'utilisateur" autocomplete="username" required autofocus/>
     <input type="password" name="password" placeholder="Choisis un mot de passe (6 caractères min.)" aria-label="Mot de passe" autocomplete="new-password" minlength="6" required/>
     <button type="submit">CRÉER MON COMPTE</button>

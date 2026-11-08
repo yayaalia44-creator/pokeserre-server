@@ -38,6 +38,7 @@ body{background:#111;min-height:100vh;font-family:'Share Tech Mono','Courier New
   </div>
   <div class="title">POKÉSERRE<br>ADMIN</div>
   <form class="form" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <input type="password" name="password" placeholder="Mot de passe admin" aria-label="Mot de passe admin" autocomplete="current-password" required autofocus/>
     <button type="submit">CONNEXION</button>
   </form>

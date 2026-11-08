@@ -81,6 +81,7 @@ body{background:#111;min-height:100vh;font-family:'Share Tech Mono','Courier New
 <div class="content">
   <div class="section-title">▸ AJOUTER UNE SERRE</div>
   <form class="add-form" method="POST" action="/admin/ajouter">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <input type="text" name="nom" placeholder="Nom de la serre (ex: Pokéserre N°1 de Yasser)" aria-label="Nom de la nouvelle serre" autocomplete="off" required/>
     <button type="submit">AJOUTER</button>
   </form>
@@ -98,6 +99,7 @@ body{background:#111;min-height:100vh;font-family:'Share Tech Mono','Courier New
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="serre-dot" style="background:{% if d %}#00C853{% else %}#888{% endif %};"></div>
           <form method="POST" action="/admin/supprimer/{{ s.id }}" onsubmit="return confirm({{ ('Supprimer ' ~ s.nom ~ ' ?')|tojson|forceescape }})" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <button type="submit" class="btn-del" title="Supprimer" aria-label="Supprimer la serre">🗑</button>
           </form>
         </div>

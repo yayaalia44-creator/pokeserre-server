@@ -348,47 +348,105 @@ function drawAvatar(w,ax,ay,dir,pose,t,typing){
 /* ---------- bulles ---------- */
 var bubbles=[];
 function say(who,text){bubbles.push({who:who,text:text,t0:performance.now(),ttl:4200});addLog(who,text);}
+/* raccourcit une ligne trop large en finissant par « … » (force = toujours mettre « … ») */
+function couper(s,maxw,force){
+  if(!force&&ctx.measureText(s).width<=maxw)return s;
+  while(s.length>1&&ctx.measureText(s+'…').width>maxw)s=s.slice(0,-1);
+  return s.replace(/\s+$/,'')+'…';
+}
 function wrap(text,maxw){
   ctx.font="8px 'Pixelify Sans',monospace";var words=sansLig(text).split(' '),lines=[],cur='';
   words.forEach(function(w){var tst=cur?cur+' '+w:w;if(ctx.measureText(tst).width>maxw&&cur){lines.push(cur);cur=w;}else cur=tst;});
   if(cur)lines.push(cur);
-  if(lines.length>2){lines=lines.slice(0,2);lines[1]=lines[1].replace(/.{1}$/,'…');}
-  return lines;
+  /* 2 lignes maximum : la 2e se termine par « … » si le texte est plus long */
+  if(lines.length>2){lines=lines.slice(0,2);lines[1]=couper(lines[1],maxw,true);}
+  /* un mot très long (chemin de fichier...) ne doit pas déborder de la bulle */
+  return lines.map(function(l){return couper(l,maxw,false);});
 }
 function rrect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
 function anchorOf(who){
   if(who===CO)return P(CO.x+.5,CO.y+.5,0);
   return P(who.seat[0]+.5,who.seat[1]+.5,0);
 }
+/* vrai si deux rectangles {x,y,w,hc} se touchent (hc = hauteur, pointe comprise) */
+function chevauche(a,b){return a.x<b.x+b.w+2&&b.x<a.x+a.w+2&&a.y<b.y+b.hc&&b.y<a.y+a.hc;}
 function drawBubbles(now){
   var all=[CO].concat(AG);
+  /* 1) zones à ne jamais recouvrir : ronds de chargement et indicateurs de frappe */
+  var fixes=[],frappes=[];
+  all.forEach(function(w){
+    if(!auTravail(w))return;
+    var an=anchorOf(w);fixes.push({x:an[0]-11,y:an[1]-61,w:22,hc:22}); /* rond (rayon 8 + contour 3) centré à an[1]-50 */
+  });
+  AG.forEach(function(a){
+    if(a.state!=='working')return;
+    if(bubbles.some(function(b){return b.who===a&&now-b.t0<b.ttl;}))return;
+    var an=anchorOf(a),f={x:an[0]-9,y:an[1]-74,w:18,hc:9}; /* au-dessus du rond de chargement (haut du rond à an[1]-61) */
+    frappes.push(f);fixes.push(f);
+  });
+  /* 2) rectangles de toutes les bulles de la frame, regroupés par personnage */
+  var groupes=[];
   all.forEach(function(who){
     var mine=bubbles.filter(function(b){return b.who===who&&now-b.t0<b.ttl;});
-    /* si l'agent travaille, on monte les bulles pour laisser la place au rond de chargement */
-    var an=anchorOf(who),yTop=an[1]-(auTravail(who)?66:42);
-    for(var i=mine.length-1;i>=0;i--){
+    if(!mine.length)return;
+    /* si l'agent travaille, la base des bulles est plus haute pour laisser la place au rond de chargement */
+    var an=anchorOf(who),g={who:who,an:an,base:an[1]-(auTravail(who)?66:42),items:[]};
+    for(var i=mine.length-1;i>=0;i--){ /* de la plus récente (en bas, avec la pointe) à la plus ancienne */
       var b=mine[i],age=now-b.t0,al=age>b.ttl-600?Math.max(0,(b.ttl-age)/600):1;
       var lines=wrap(b.text,84);ctx.font="8px 'Pixelify Sans',monospace";
       var tw=0;lines.forEach(function(l){tw=Math.max(tw,ctx.measureText(l).width);});
       ctx.font="bold 8px 'Pixelify Sans',monospace";tw=Math.max(tw,ctx.measureText(sansLig(who.id)).width);
-      var bw=Math.ceil(tw)+10,bh=(lines.length+1)*9+5,bx=Math.max(3,Math.min(W-bw-3,an[0]-bw/2)),by=yTop-bh;
-      ctx.globalAlpha=al;
+      var bw=Math.ceil(tw)+10,bh=(lines.length+1)*9+5,pointe=(i===mine.length-1);
+      g.items.push({lines:lines,al:al,x:Math.max(3,Math.min(W-bw-3,an[0]-bw/2)),y:0,w:bw,h:bh,hc:bh+(pointe?4:0),pointe:pointe});
+    }
+    groupes.push(g);
+  });
+  /* 3) placement : on commence par les personnages les plus bas à l'écran ; une bulle qui touche
+        une bulle déjà placée (ou un rond de chargement) est décalée vers le haut */
+  groupes.sort(function(a,b){return b.base-a.base;});
+  var places=fixes.slice();
+  groupes.forEach(function(g){
+    var bas=g.base; /* bas de la prochaine bulle de ce personnage */
+    g.items.forEach(function(it){
+      it.y=bas-it.h;
+      for(var n=0;n<40;n++){
+        var gene=null;
+        for(var k=0;k<places.length;k++){if(chevauche(it,places[k])){gene=places[k];break;}}
+        if(!gene)break;
+        it.y=gene.y-it.hc-3;
+      }
+      if(it.y<2)it.y=2; /* ne sort jamais par le haut du canvas */
+      places.push(it);bas=it.y-3;
+    });
+  });
+  /* 4) dessin : d'abord le pointillé qui relie une bulle décalée à son personnage, puis les bulles */
+  groupes.forEach(function(g){
+    var it=g.items[0];
+    it.ax=Math.max(it.x+6,Math.min(it.x+it.w-6,g.an[0])); /* pointe toujours sous la bulle */
+    if(it.y+it.h<g.base){
+      ctx.globalAlpha=it.al;ctx.strokeStyle='#1b1b1b';ctx.lineWidth=1;ctx.setLineDash([2,2]);
+      ctx.beginPath();ctx.moveTo(it.ax+.5,it.y+it.h+4);ctx.lineTo(g.an[0]+.5,g.base+4);ctx.stroke();
+      ctx.setLineDash([]);ctx.globalAlpha=1;
+    }
+  });
+  groupes.forEach(function(g){
+    var who=g.who;
+    g.items.forEach(function(it){
+      var bx=it.x,by=it.y,bw=it.w,bh=it.h,ax=it.ax;
+      ctx.globalAlpha=it.al;
       rrect(bx+.5,by+.5,bw,bh,4);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#1b1b1b';ctx.lineWidth=1;ctx.stroke();
-      if(i===mine.length-1){ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(an[0]-3,by+bh);ctx.lineTo(an[0]+3,by+bh);ctx.lineTo(an[0],by+bh+4);ctx.fill();ctx.strokeStyle='#1b1b1b';ctx.beginPath();ctx.moveTo(an[0]-3,by+bh);ctx.lineTo(an[0],by+bh+4);ctx.lineTo(an[0]+3,by+bh);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(an[0]-2,by+bh-1,5,2);}
+      if(it.pointe){ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(ax-3,by+bh);ctx.lineTo(ax+3,by+bh);ctx.lineTo(ax,by+bh+4);ctx.fill();ctx.strokeStyle='#1b1b1b';ctx.beginPath();ctx.moveTo(ax-3,by+bh);ctx.lineTo(ax,by+bh+4);ctx.lineTo(ax+3,by+bh);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(ax-2,by+bh-1,5,2);}
       ctx.textAlign='left';ctx.textBaseline='top';
       ctx.font="bold 8px 'Pixelify Sans',monospace";ctx.fillStyle=who.shirt;ctx.fillText(sansLig(who.id),bx+5,by+3);
       ctx.font="8px 'Pixelify Sans',monospace";ctx.fillStyle='#111';
-      lines.forEach(function(l,k){ctx.fillText(l,bx+5,by+12+k*9);});
-      ctx.globalAlpha=1;yTop=by-3;
-    }
+      it.lines.forEach(function(l,k){ctx.fillText(l,bx+5,by+12+k*9);});
+      ctx.globalAlpha=1;
+    });
   });
-  /* indicateur de frappe */
-  AG.forEach(function(a){
-    if(a.state!=='working')return;
-    if(bubbles.some(function(b){return b.who===a&&now-b.t0<b.ttl;}))return;
-    var an=anchorOf(a),x=an[0]-9,y=an[1]-74; /* au-dessus du rond de chargement (haut du rond à an[1]-61) */
-    rrect(x+.5,y+.5,18,9,3);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#1b1b1b';ctx.stroke();
-    var n=Math.floor(now/250)%3;for(var k=0;k<3;k++)R(x+4+k*4,y+4,2,2,k===n?'#111':'#aaa');
+  /* 5) indicateurs de frappe */
+  frappes.forEach(function(f){
+    rrect(f.x+.5,f.y+.5,18,9,3);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#1b1b1b';ctx.stroke();
+    var n=Math.floor(now/250)%3;for(var k=0;k<3;k++)R(f.x+4+k*4,f.y+4,2,2,k===n?'#111':'#aaa');
   });
 }
 /* vrai si le personnage travaille (le coordinateur seulement en mode direct) */

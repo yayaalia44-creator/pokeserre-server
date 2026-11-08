@@ -59,6 +59,31 @@ def secret_ok(recu, attendu):
         return False
     return hmac.compare_digest(recu.encode('utf-8'), attendu.encode('utf-8'))
 
+# --- PROTECTION CSRF (maison, sans dépendance) ---
+# Chaque formulaire POST contient un jeton secret lié à la session ; un autre site ne peut pas le connaître.
+# Les routes /api/ (ESP32, hook du bureau, cron) sont exemptées : elles sont protégées par leur propre token.
+def csrf_token():
+    # crée le jeton une seule fois par session, puis le réutilise
+    if 'csrf' not in session:
+        session['csrf'] = secrets.token_urlsafe(32)
+    return session['csrf']
+
+@app.context_processor
+def injecter_csrf():
+    # rend {{ csrf_token() }} utilisable dans tous les templates
+    return {'csrf_token': csrf_token}
+
+@app.before_request
+def verifier_csrf():
+    if request.method not in ('POST', 'PUT', 'PATCH', 'DELETE'):
+        return None
+    if request.path.startswith('/api/'):
+        return None   # API JSON authentifiées par token (pas de cookie de session)
+    if not secret_ok(request.form.get('csrf_token'), session.get('csrf', '')):
+        return ("Formulaire expiré ou invalide. Recharge la page et réessaie.", 400,
+                {'Content-Type': 'text/plain; charset=utf-8'})
+    return None
+
 # --- MODÈLES ---
 class Utilisateur(db.Model):
     id           = db.Column(db.Integer, primary_key=True)
