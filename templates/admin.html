@@ -1,337 +1,164 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="60">
-    <title>Admin — Pokéserre</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: #111;
-            min-height: 100vh;
-            font-family: 'Share Tech Mono','Courier New',monospace;
-            color: #fff;
-        }
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 24px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-
-        .title {
-            font-family: 'Press Start 2P',monospace;
-            font-size: 9px;
-            color: #E3000F;
-            letter-spacing: 2px;
-        }
-
-        .logout {
-            font-size: 9px;
-            color: rgba(255,255,255,0.3);
-            text-decoration: none;
-            letter-spacing: 1px;
-            border: 1px solid rgba(255,255,255,0.15);
-            padding: 6px 12px;
-            border-radius: 3px;
-        }
-
-            .logout:hover {
-                color: #fff;
-                border-color: rgba(255,255,255,0.4);
-            }
-
-        .divider {
-            height: 5px;
-            background: linear-gradient(90deg,#E3000F 47%,#111 47%,#111 50%,#fff 50%,#fff 53%,#111 53%);
-        }
-
-        .content {
-            padding: 24px;
-        }
-
-        .section-title {
-            font-family: 'Press Start 2P',monospace;
-            font-size: 8px;
-            color: rgba(255,255,255,0.3);
-            letter-spacing: 2px;
-            margin-bottom: 16px;
-        }
-
-        .add-form {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 6px;
-            padding: 16px 20px;
-            margin-bottom: 28px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-            .add-form input {
-                background: rgba(255,255,255,0.06);
-                border: 1px solid rgba(255,255,255,0.15);
-                color: #fff;
-                font-family: 'Share Tech Mono',monospace;
-                font-size: 12px;
-                padding: 8px 12px;
-                border-radius: 3px;
-                flex: 1;
-            }
-
-            .add-form button {
-                background: #E3000F;
-                color: #fff;
-                border: none;
-                font-family: 'Press Start 2P',monospace;
-                font-size: 7px;
-                padding: 10px 14px;
-                cursor: pointer;
-                border-radius: 3px;
-                letter-spacing: 1px;
-            }
-
-                .add-form button:hover {
-                    background: #b00009;
-                }
-
-        .serres-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill,minmax(280px,1fr));
-            gap: 16px;
-        }
-
-        .serre-card {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 8px;
-            padding: 20px;
-            transition: border-color .2s;
-        }
-
-            .serre-card:hover {
-                border-color: rgba(255,255,255,0.2);
-            }
-
-        .serre-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-        }
-
-        .serre-nom {
-            font-family: 'Press Start 2P',monospace;
-            font-size: 9px;
-            color: #fff;
-            letter-spacing: 1px;
-        }
-
-        .serre-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-
-        .serre-info {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .serre-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .serre-lbl {
-            font-size: 9px;
-            color: rgba(255,255,255,0.3);
-            letter-spacing: 1px;
-        }
-
-        .serre-val {
-            font-family: 'Press Start 2P',monospace;
-            font-size: 11px;
-        }
-
-        .serre-token {
-            font-size: 9px;
-            color: rgba(255,255,255,0.2);
-            margin-top: 10px;
-            word-break: break-all;
-            letter-spacing: 1px;
-        }
-
-        .serre-link {
-            display: block;
-            margin-top: 10px;
-            font-size: 9px;
-            color: #E3000F;
-            text-decoration: none;
-            letter-spacing: 1px;
-        }
-
-            .serre-link:hover {
-                color: #ff4444;
-            }
-
-        .btn-qr {
-            margin-top: 8px;
-            background: rgba(41,121,255,0.15);
-            color: #2979FF;
-            border: 1px solid rgba(41,121,255,0.3);
-            font-family: 'Share Tech Mono',monospace;
-            font-size: 9px;
-            padding: 6px 12px;
-            cursor: pointer;
-            border-radius: 3px;
-            width: 100%;
-            letter-spacing: 1px;
-        }
-
-            .btn-qr:hover {
-                background: rgba(41,121,255,0.25);
-            }
-
-        .btn-del {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: rgba(255,0,0,0.5);
-            font-size: 14px;
-            padding: 2px 4px;
-            line-height: 1;
-        }
-
-            .btn-del:hover {
-                color: #ff4444;
-            }
-
-        .qr-box {
-            display: none;
-            margin-top: 12px;
-            background: #fff;
-            padding: 10px;
-            border-radius: 4px;
-            text-align: center;
-        }
-
-            .qr-box p {
-                font-size: 8px;
-                color: #111;
-                margin-top: 6px;
-                letter-spacing: 1px;
-                word-break: break-all;
-            }
-
-        .no-serre {
-            text-align: center;
-            color: rgba(255,255,255,0.3);
-            font-size: 12px;
-            padding: 40px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- rechargement auto toutes les 5 min -->
+<meta http-equiv="refresh" content="300">
+<title>Admin — Pokéserre</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#111;min-height:100vh;font-family:'Share Tech Mono','Courier New',monospace;color:#fff;}
+.topbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding:14px 24px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.title{font-family:'Press Start 2P',monospace;font-size:10px;color:#E3000F;letter-spacing:2px;line-height:1.6;}
+/* liens du haut : touche AGENTS + DÉCONNEXION */
+.top-links{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.logout{display:inline-flex;align-items:center;min-height:34px;font-size:12px;color:rgba(255,255,255,0.6);text-decoration:none;letter-spacing:1px;border:1px solid rgba(255,255,255,0.15);padding:6px 12px;border-radius:3px;}
+.logout:hover{color:#fff;border-color:rgba(255,255,255,0.4);}
+/* touche « bureau des agents » : petit bouton rouge Pokéball */
+.btn-agents{position:relative;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px 0 8px;background:#E3000F;color:#fff;text-decoration:none;font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px;border:2px solid #fff;border-radius:17px;}
+.btn-agents:hover{background:#b00009;}
+.btn-agents:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+/* mini Pokéball en CSS : haut blanc, bas noir, bouton central */
+.mini-ball{position:relative;width:16px;height:16px;border-radius:50%;border:2px solid #111;background:linear-gradient(180deg,#fff 0 44%,#111 44% 56%,#1a1a1a 56% 100%);flex-shrink:0;}
+.mini-ball::after{content:'';position:absolute;top:50%;left:50%;width:6px;height:6px;transform:translate(-50%,-50%);background:#fff;border:1px solid #111;border-radius:50%;}
+/* point vert décoratif (pas de réseau) */
+.live-dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:#00C853;border:2px solid #111;animation:pulse 1.6s ease-in-out infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,200,83,0.7);}50%{box-shadow:0 0 0 4px rgba(0,200,83,0);}}
+@media(prefers-reduced-motion:reduce){.live-dot{animation:none;}}
+.divider{height:5px;background:linear-gradient(90deg,#E3000F 47%,#111 47%,#111 50%,#fff 50%,#fff 53%,#111 53%);}
+.content{padding:24px;}
+.section-title{font-family:'Press Start 2P',monospace;font-size:10px;color:rgba(255,255,255,0.55);letter-spacing:2px;margin-bottom:16px;line-height:1.6;}
+.add-form{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:16px 20px;margin-bottom:28px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;}
+.add-form input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#fff;font-family:'Share Tech Mono',monospace;font-size:16px;padding:8px 12px;border-radius:3px;flex:1 1 200px;min-width:0;}
+.add-form input::placeholder{color:rgba(255,255,255,0.55);}
+.add-form button{background:#E3000F;color:#fff;border:none;font-family:'Press Start 2P',monospace;font-size:10px;padding:10px 14px;cursor:pointer;border-radius:3px;letter-spacing:1px;}
+.add-form button:hover{background:#b00009;}
+.serres-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:16px;}
+.serre-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:20px;transition:border-color .2s;}
+.serre-card:hover{border-color:rgba(255,255,255,0.2);}
+.serre-header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;}
+.serre-nom{font-family:'Press Start 2P',monospace;font-size:10px;color:#fff;letter-spacing:1px;line-height:1.6;word-break:break-word;}
+.serre-dot{width:8px;height:8px;border-radius:50%;}
+.serre-info{display:flex;flex-direction:column;gap:8px;}
+.serre-row{display:flex;justify-content:space-between;align-items:center;}
+.serre-lbl{font-size:12px;color:rgba(255,255,255,0.55);letter-spacing:1px;}
+.serre-val{font-family:'Press Start 2P',monospace;font-size:11px;}
+.serre-token{font-size:12px;color:rgba(255,255,255,0.55);margin-top:10px;word-break:break-all;letter-spacing:1px;}
+.btn-qr{margin-top:8px;background:rgba(41,121,255,0.15);color:#2979FF;border:1px solid rgba(41,121,255,0.3);font-family:'Share Tech Mono',monospace;font-size:12px;padding:6px 12px;cursor:pointer;border-radius:3px;width:100%;letter-spacing:1px;}
+.btn-qr:hover{background:rgba(41,121,255,0.25);}
+.btn-del{background:none;border:none;cursor:pointer;color:rgba(255,77,77,0.7);font-size:14px;padding:8px;line-height:1;}
+.btn-del:hover{color:#ff4d4d;}
+.qr-box{display:none;margin-top:12px;background:#fff;padding:10px;border-radius:4px;text-align:center;}
+.qr-box p{font-size:12px;color:#111;margin-top:6px;letter-spacing:1px;word-break:break-all;}
+.no-serre{text-align:center;color:rgba(255,255,255,0.55);font-size:12px;padding:40px;}
+/* mobile : marges réduites */
+@media(max-width:600px){
+  .topbar{padding:12px 16px;}
+  .content{padding:16px;}
+  .add-form{padding:14px;}
+}
+</style>
 </head>
 <body>
 
-    <div class="topbar">
-        <div class="title">⚡ ADMIN — POKÉSERRE</div>
-        <a href="/admin/logout" class="logout">DÉCONNEXION</a>
-    </div>
-    <div class="divider"></div>
+<div class="topbar">
+  <div class="title">⚡ ADMIN — POKÉSERRE</div>
+  <div class="top-links">
+    <!-- touche « bureau des agents » (mini Pokéball + point vert décoratif) -->
+    <a href="/admin/bureau" class="btn-agents" title="Bureau des agents" aria-label="Bureau des agents">
+      <span class="mini-ball" aria-hidden="true"></span>
+      <span>AGENTS</span>
+      <span class="live-dot" aria-hidden="true"></span>
+    </a>
+    <a href="/admin/logout" class="logout">DÉCONNEXION</a>
+  </div>
+</div>
+<div class="divider"></div>
 
-    <div class="content">
-        <div class="section-title">▸ AJOUTER UNE SERRE</div>
-        <form class="add-form" method="POST" action="/admin/ajouter">
-            <input type="text" name="nom" placeholder="Nom de la serre (ex: Pokéserre N°1 de Yasser)" required />
-            <button type="submit">AJOUTER</button>
-        </form>
+<div class="content">
+  <div class="section-title">▸ AJOUTER UNE SERRE</div>
+  <form class="add-form" method="POST" action="/admin/ajouter">
+    <input type="text" name="nom" placeholder="Nom de la serre (ex: Pokéserre N°1 de Yasser)" aria-label="Nom de la nouvelle serre" autocomplete="off" required/>
+    <button type="submit">AJOUTER</button>
+  </form>
 
-        <div class="section-title">▸ MES SERRES ({{ data|length }})</div>
+  <div class="section-title">▸ MES SERRES ({{ data|length }})</div>
 
-        {% if data %}
-        <div class="serres-grid">
-            {% for item in data %}
-            {% set s = item.serre %}
-            {% set d = item.derniere %}
-            <div class="serre-card">
-                <div class="serre-header">
-                    <div class="serre-nom">{{ s.nom }}</div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <div class="serre-dot" style="background:{% if d %}#00C853{% else %}#888{% endif %};"></div>
-                        <form method="POST" action="/admin/supprimer/{{ s.id }}" onsubmit="return confirm('Supprimer {{ s.nom }} ?')" style="margin:0;">
-                            <button type="submit" class="btn-del" title="Supprimer">🗑</button>
-                        </form>
-                    </div>
-                </div>
-                <div class="serre-info">
-                    {% if d %}
-                    <div class="serre-row">
-                        <span class="serre-lbl">HUMIDITÉ</span>
-                        <span class="serre-val" style="color:{% if d.humidite < 40 %}#e67e22{% elif d.humidite > 80 %}#2979FF{% else %}#00C853{% endif %};">{{ d.humidite|int }}%</span>
-                    </div>
-                    <div class="serre-row">
-                        <span class="serre-lbl">BATTERIE</span>
-                        <span class="serre-val" style="color:{% if d.batterie < 20 %}#E3000F{% elif d.batterie < 50 %}#FFD600{% else %}#00C853{% endif %};">{{ d.batterie|int }}%</span>
-                    </div>
-                    <div class="serre-row">
-                        <span class="serre-lbl">DERNIÈRE MÀJ</span>
-                        <span class="serre-val" style="font-size:9px;">{{ d.date.strftime('%d/%m %H:%M') }}</span>
-                    </div>
-                    {% else %}
-                    <div class="serre-row">
-                        <span class="serre-lbl">STATUT</span>
-                        <span class="serre-val" style="color:rgba(255,255,255,0.3);font-size:9px;">EN ATTENTE</span>
-                    </div>
-                    {% endif %}
-                    <div class="serre-token">TOKEN : {{ s.token }}</div>
-                    <a href="/serre" class="serre-link">→ VOIR LE DASHBOARD</a>
-                    <button class="btn-qr" onclick="toggleQR('{{ s.id }}', '{{ request.url_root }}register/{{ s.token }}')">QR CODE INSCRIPTION</button>
-                    <div class="qr-box" id="qr-box-{{ s.id }}">
-                        <div id="qr-{{ s.id }}"></div>
-                        <p>{{ request.url_root }}register/{{ s.token }}</p>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+  {% if data %}
+  <div class="serres-grid">
+    {% for item in data %}
+    {% set s = item.serre %}
+    {% set d = item.derniere %}
+    <div class="serre-card">
+      <div class="serre-header">
+        <div class="serre-nom">{{ s.nom }}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="serre-dot" style="background:{% if d %}#00C853{% else %}#888{% endif %};"></div>
+          <form method="POST" action="/admin/supprimer/{{ s.id }}" onsubmit="return confirm({{ ('Supprimer ' ~ s.nom ~ ' ?')|tojson|forceescape }})" style="margin:0;">
+            <button type="submit" class="btn-del" title="Supprimer" aria-label="Supprimer la serre">🗑</button>
+          </form>
+        </div>
+      </div>
+      <div class="serre-info">
+        {% if d %}
+        {# anciennes mesures vides (None) : on les traite comme 0 #}
+        {% set hu = d.humidite or 0 %}
+        {% set ba = d.batterie or 0 %}
+        <div class="serre-row">
+          <span class="serre-lbl">HUMIDITÉ</span>
+          <span class="serre-val" style="color:{% if hu < 40 %}#e67e22{% elif hu > 80 %}#2979FF{% else %}#00C853{% endif %};">{{ hu|int }}%</span>
+        </div>
+        <div class="serre-row">
+          <span class="serre-lbl">BATTERIE</span>
+          <span class="serre-val" style="color:{% if ba < 20 %}#E3000F{% elif ba < 50 %}#FFD600{% else %}#00C853{% endif %};">{{ ba|int }}%</span>
+        </div>
+        <div class="serre-row">
+          <span class="serre-lbl">DERNIÈRE MÀJ</span>
+          <span class="serre-val" style="font-size:10px;">{{ d.date.strftime('%d/%m %H:%M') }}</span>
         </div>
         {% else %}
-        <div class="no-serre">Aucune serre — ajoutes-en une ci-dessus !</div>
+        <div class="serre-row">
+          <span class="serre-lbl">STATUT</span>
+          <span class="serre-val" style="color:rgba(255,255,255,0.55);font-size:10px;">EN ATTENTE</span>
+        </div>
         {% endif %}
+        <div class="serre-token">TOKEN : {{ s.token }}</div>
+        <button class="btn-qr" onclick="toggleQR({{ s.id|tojson|forceescape }}, {{ (request.url_root ~ 'register/' ~ s.token)|tojson|forceescape }})">QR CODE INSCRIPTION</button>
+        <div class="qr-box" id="qr-box-{{ s.id }}">
+          <div id="qr-{{ s.id }}"></div>
+          <p>{{ request.url_root }}register/{{ s.token }}</p>
+        </div>
+      </div>
     </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="no-serre">Aucune serre — ajoutes-en une ci-dessus !</div>
+  {% endif %}
+</div>
 
-    <script>
-        var qrCodes = {};
-        function toggleQR(id, url) {
-            var box = document.getElementById('qr-box-' + id);
-            if (box.style.display === 'none' || box.style.display === '') {
-                box.style.display = 'block';
-                if (!qrCodes[id]) {
-                    qrCodes[id] = new QRCode(document.getElementById('qr-' + id), {
-                        text: url,
-                        width: 140,
-                        height: 140,
-                        colorDark: '#111111',
-                        colorLight: '#ffffff'
-                    });
-                }
-            } else {
-                box.style.display = 'none';
-            }
-        }
-    </script>
+<script>
+var qrCodes = {};
+function toggleQR(id, url) {
+  var box = document.getElementById('qr-box-' + id);
+  if (box.style.display === 'none' || box.style.display === '') {
+    box.style.display = 'block';
+    if (!qrCodes[id]) {
+      qrCodes[id] = new QRCode(document.getElementById('qr-' + id), {
+        text: url,
+        width: 140,
+        height: 140,
+        colorDark: '#111111',
+        colorLight: '#ffffff'
+      });
+    }
+  } else {
+    box.style.display = 'none';
+  }
+}
+</script>
 </body>
 </html>

@@ -1,7 +1,8 @@
-venv/
-__pycache__/
-*.db
-*.pyc
-.env
-instance/
 .vs/
+__pycache__/
+*.pyc
+*.db
+.env
+venv/
+.venv/
+instance/

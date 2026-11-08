@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+{% raw %}
+<title>Bureau Pokéserre</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* Concept : salle d'hôtel en isométrique façon Habbo, six avatars, panneaux bleu marine biseautés. Un seul univers visuel, volontairement sombre. */
+:root{
+  --bg:#0c1a29; --panel:#1f3f5c; --panel-hi:#4a7aa0; --panel-lo:#0a1824; --inset:#12293f;
+  --fg:#eaf3fb; --muted:#8fb0cb; --green:#33b050; --green-lo:#1c7a33; --red:#e3000f; --red-lo:#9a000a; --blue:#2f8fd8; --blue-lo:#1b5f94; --gold:#ffc83a;
+  --font-d:'Silkscreen','Courier New',monospace; --font-b:'Pixelify Sans','Courier New',monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-b);font-size:15px;margin:0;
+  /* Pixelify Sans remplace « fi »/« fl » par un glyphe en forme de « A » : on coupe les ligatures */
+  font-variant-ligatures:none;font-feature-settings:"liga" 0,"clig" 0;
+  padding-block:18px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.win{background:var(--panel);border:2px solid var(--panel-lo);border-radius:6px;box-shadow:inset 0 0 0 1px var(--panel-hi);overflow:hidden;min-width:0}
+.win>h2{margin:0;font-family:var(--font-d);font-size:11px;letter-spacing:1px;padding:9px 12px;background:linear-gradient(#3b6b92,#2c5578);border-bottom:2px solid var(--panel-lo);display:flex;justify-content:space-between;gap:8px;align-items:center}
+.win>h2 small{font-family:var(--font-b);font-size:12px;color:#cfe3f3;font-weight:400}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{font-family:var(--font-d);font-weight:700;font-size:18px;letter-spacing:2px;color:#fff;text-shadow:0 2px 0 var(--red-lo);display:flex;align-items:center;gap:10px}
+.logo i{width:22px;height:22px;border-radius:50%;background:linear-gradient(#e3000f 46%,#111 46%,#111 54%,#f4f4f4 54%);border:2px solid #111;display:block}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{font-family:var(--font-d);font-size:10px;letter-spacing:1px;color:#fff;border:2px solid var(--panel-lo);border-bottom-width:4px;border-radius:5px;padding:9px 13px;cursor:pointer;background:var(--blue);box-shadow:inset 0 2px 0 rgba(255,255,255,.35)}
+button:hover{filter:brightness(1.1)}
+button:active{border-bottom-width:2px;transform:translateY(2px)}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button.go{background:var(--green)}
+button.stop{background:var(--red)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:14px;align-items:start}
+@media(max-width:800px){.main{grid-template-columns:minmax(0,1fr)}}
+.room{background:#0a1520;padding:0}
+canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges}
+.list{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;padding:10px 12px;border-bottom:1px solid var(--panel-lo);align-items:center}
+.row:last-child{border-bottom:0}
+.row canvas{width:44px;height:44px;background:var(--inset);border:2px solid var(--panel-lo);border-radius:4px}
+.nm{font-family:var(--font-d);font-size:10px;display:flex;justify-content:space-between;gap:6px;align-items:center}
+.st{font-size:12px;color:var(--muted);margin:3px 0 5px;line-height:1.25;overflow-wrap:anywhere;min-height:2.5em}
+.pill{font-family:var(--font-d);font-size:8px;padding:3px 5px;border-radius:3px;border:1px solid var(--panel-lo);flex:none}
+.pill.idle{background:#33516b;color:#b8d0e4}
+.pill.working{background:#a56d00;color:#fff3cf}
+.pill.done{background:var(--green-lo);color:#e5ffe9}
+.pill.walk{background:#6b3fd1;color:#efe6ff}
+.bar{height:7px;background:var(--inset);border:1px solid var(--panel-lo);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--c)}
+.row button{margin-top:7px;font-size:8px;padding:5px 8px;border-bottom-width:3px}
+.chat{background:#fff;color:#111;padding:0}
+#log{list-style:none;margin:0;padding:8px 10px;display:flex;flex-direction:column;gap:4px;max-height:210px;overflow:auto;font-size:14px;background:#f6f6f2}
+#log li{display:flex;gap:8px;min-width:0;line-height:1.25}
+#log time{color:#8a8a82;flex:none}
+#log span{min-width:0;overflow-wrap:anywhere}
+.note{color:var(--muted);font-size:13px;line-height:1.4;margin:0}
+/* badge « EN DIRECT » / « SIMULATION » à côté de l'horloge */
+.hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.live{font-family:var(--font-d);font-size:8px;padding:3px 5px;border-radius:3px;border:1px solid var(--panel-lo);white-space:nowrap}
+.live.on{background:var(--green-lo);color:#e5ffe9}
+.live.off{background:#3a4652;color:#b8c4cf}
+/* lien de retour vers la page admin */
+.back{font-family:var(--font-d);font-size:10px;letter-spacing:1px;color:#fff;text-decoration:none;border:2px solid var(--panel-lo);border-radius:5px;padding:9px 13px;background:var(--panel)}
+.back:hover{filter:brightness(1.2)}
+.back:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div class="logo"><i></i>POKÉSERRE HOTEL</div>
+    <div class="btns">
+      <a href="/admin" class="back">← ADMIN</a>
+      <button id="demo">SIMULATION</button>
+      <button class="go" id="audit">LANCER L'AUDIT</button>
+      <button class="stop" id="rest">TOUT METTRE AU REPOS</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="win">
+      <h2>Salle des agents <span class="hd"><span class="live off" id="live">SIMULATION</span><small id="clock"></small></span></h2>
+      <div class="room"><canvas id="c" width="360" height="272" aria-label="Salle en isométrique : un coordinateur au centre et cinq agents à leurs bureaux"></canvas></div>
+    </div>
+    <div class="win">
+      <h2>Équipe</h2>
+      <div class="list" id="list"></div>
+    </div>
+  </div>
+
+  <div class="win chat">
+    <h2>Historique du chat</h2>
+    <ul id="log"></ul>
+  </div>
+  <p class="note">En direct : les personnages suivent le vrai travail de Claude Code (fichier etat.js écrit par un hook). Sans ce fichier, la page reste en simulation.</p>
+</div>
+
+<script>
+(function(){
+var cv=document.getElementById('c'),ctx=cv.getContext('2d');
+var W=360,H=272,OX=180,OY=104,N=9,WH=88;
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- personnages ---------- */
+var AG=[
+ {id:'designer-site',role:'Design du site',col:'#ff4a4a',shirt:'#e3000f',pants:'#2b3350',hair:'#4a2a18',skin:'#f1c9a0',acc:'cap',
+  seat:[2,1],stand:[3,1],face:'ne',
+  tasks:['Je vérifie les balises HTML','Je teste l\'affichage mobile','Je contrôle le thème rouge Pokéball','J\'ajoute un bouton déconnexion']},
+ {id:'backend-flask',role:'Serveur Flask',col:'#5aa8ff',shirt:'#2f6fd0',pants:'#262a3a',hair:'#1b2238',skin:'#d9a77c',acc:'glasses',
+  seat:[7,1],stand:[6,1],face:'ne',
+  tasks:['Je teste les routes Flask','Je vérifie l\'isolation des serres','Je contrôle le token à usage unique','Je convertis postgres:// en postgresql://']},
+ {id:'esp32',role:'Électronique',col:'#47e08a',shirt:'#1f9e55',pants:'#2a2f2f',hair:'#222',skin:'#f1c9a0',acc:'phones',
+  seat:[1,2],stand:[1,3],face:'nw',
+  tasks:['Je relis pokeserre.py','Je vérifie le deep sleep de 3 h','Je prépare lire_capteur() sur GPIO1','J\'estime l\'autonomie de la batterie']},
+ {id:'impression-3d',role:'Impression 3D',col:'#ffb830',shirt:'#e08a10',pants:'#3a3030',hair:'#5a3b12',skin:'#c68b5f',acc:'helmet',
+  seat:[1,6],stand:[1,7],face:'nw',
+  tasks:['Je liste les 5 pièces à exporter','Je choisis l\'orientation des coques','Je règle parois 2-3 mm et jeu 0,3 mm','Je prépare la plaque Bambu Studio']},
+ /* terminal : lance les commandes PowerShell, ne modifie pas le code. Bureau dans le coin gauche (case 0,8) */
+ {id:'terminal',role:'Terminal',col:'#3fe0d0',shirt:'#138a80',pants:'#23303a',hair:'#2a1a12',skin:'#e0b48c',acc:'beanie',
+  seat:[1,8],stand:[2,8],face:'nw',
+  tasks:['Je lance le test local du serveur','J\'installe les dépendances pip','Je vérifie git status','Je contrôle le déploiement Render avec gh']}
+];
+AG.forEach(function(a,i){a.i=i;a.state='idle';a.task='Au repos';a.p=0;a.dur=4;a.queue=[];a.wait=0;a.total=0;a.done=0;a.idleIn=undefined;a.tk=i;});
+var CO={id:'coordinateur',role:'Chef d\'orchestre',col:'#b58cff',shirt:'#6b3fd1',pants:'#2b2540',hair:'#e8c04a',skin:'#f1c9a0',acc:'crown',
+  x:4,y:3,dir:'sw',mode:'seated',path:[],cur:null,talkT:0,spoke:false,gave:false,task:'À son bureau',p:0};
+var JOBS=[],pendingVisits=0,auditRunning=false;
+/* simulation « chacun son tour » : i = agent courant, actif = simulation en cours, lance = tâche déjà donnée à l'agent courant */
+var DEMO={i:0,actif:false,lance:false};
+/* mode direct : actif = etat.js lu et récent, script = balise <script> en cours, coWork/coTache = travail réel du coordinateur */
+var LIVE={actif:false,script:null,coWork:false,coTache:''};
+/* état direct de chaque agent : live = suit le vrai travail, liveDemande = le coordinateur est en route pour lui donner le job */
+AG.forEach(function(a){a.live=false;a.liveDemande=false;a.liveWork=false;a.liveTache='';});
+
+/* ---------- utilitaires de dessin ---------- */
+function P(gx,gy,z){return [Math.round(OX+(gx-gy)*16),Math.round(OY+(gx+gy)*8-(z||0))];}
+function R(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h);}
+function poly(pts,fill,stroke){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(var i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();}}
+function box(gx,gy,w,d,h,z,cT,cL,cR){
+  var z1=z+h,ln='rgba(8,14,24,.55)';
+  var A=P(gx,gy,z1),B=P(gx+w,gy,z1),C=P(gx+w,gy+d,z1),D=P(gx,gy+d,z1);
+  var C0=P(gx+w,gy+d,z),D0=P(gx,gy+d,z),B0=P(gx+w,gy,z);
+  poly([D,C,C0,D0],cL,ln);poly([B,C,C0,B0],cR,ln);poly([A,B,C,D],cT,ln);
+}
+function plane(kind,pt,fn){ctx.save();ctx.setTransform(1,kind==='R'?0.5:-0.5,0,1,pt[0],pt[1]);fn();ctx.restore();}
+/* le canvas ignore le CSS : on casse les ligatures fi/fl/ff avec un caractère invisible (U+200C) après le « f » */
+var ZWNJ=String.fromCharCode(0x200C);
+function sansLig(s){return String(s).replace(/f(?=[ilf])/g,'f'+ZWNJ);}
+function T(s,x,y,c,al,px){ctx.font=(px||6)+"px 'Silkscreen',monospace";ctx.fillStyle=c;ctx.textAlign=al||'left';ctx.textBaseline='middle';ctx.fillText(sansLig(s),Math.round(x),Math.round(y));}
+function ballLocal(x,y,r){ctx.fillStyle='#e3000f';ctx.beginPath();ctx.arc(x,y,r,Math.PI,0);ctx.fill();ctx.fillStyle='#f4f4f4';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI);ctx.fill();R(x-r,y-1,r*2,2,'#111');R(x-2,y-2,4,4,'#111');R(x-1,y-1,2,2,'#f4f4f4');}
+
+/* ---------- pièce ---------- */
+function sky(h){
+  if(h>=8&&h<18)return ['#6fc3ff','#c9eaff',0];
+  if((h>=18&&h<21)||(h>=6&&h<8))return ['#5a3d8a','#ff9a5a',0];
+  return ['#071230','#1c2f66',1];
+}
+function drawRoom(t){
+  /* sol */
+  for(var gx=0;gx<N;gx++)for(var gy=0;gy<N;gy++){
+    poly([P(gx,gy),P(gx+1,gy),P(gx+1,gy+1),P(gx,gy+1)],(gx+gy)%2?'#a9b7c9':'#b6c3d4','#97a6bb');
+  }
+  poly([P(0,N),P(N,N),P(N,N,-8),P(0,N,-8)],'#5f6e86','#2c3648');
+  poly([P(N,0),P(N,N),P(N,N,-8),P(N,0,-8)],'#46546c','#2c3648');
+  /* tapis */
+  poly([P(3,2.2),P(7,2.2),P(7,6),P(3,6)],'#a81c2b','#6b0f1a');
+  poly([P(3.25,2.45),P(6.75,2.45),P(6.75,5.75),P(3.25,5.75)],null,'#f1e3b8');
+  poly([P(3.5,2.7),P(6.5,2.7),P(6.5,5.5),P(3.5,5.5)],null,'#7d1220');
+  /* murs */
+  var L='#b9c8e6',L2='#c6d3ee',Rr='#9fb1d8',R2='#aab9df';
+  poly([P(0,0,WH),P(0,N,WH),P(0,N,0),P(0,0,0)],L,'#6e7da3');
+  poly([P(0,0,WH),P(N,0,WH),P(N,0,0),P(0,0,0)],Rr,'#6e7da3');
+  for(var k=0;k<N*2;k+=2){
+    poly([P(0,k/2,WH),P(0,k/2+.5,WH),P(0,k/2+.5,0),P(0,k/2,0)],L2);
+    poly([P(k/2,0,WH),P(k/2+.5,0,WH),P(k/2+.5,0,0),P(k/2,0,0)],R2);
+  }
+  poly([P(0,0,7),P(0,N,7),P(0,N,0),P(0,0,0)],'#7e8db4','#5b6a90');
+  poly([P(0,0,7),P(N,0,7),P(N,0,0),P(0,0,0)],'#6f7fab','#5b6a90');
+  poly([P(0,0,WH),P(0,N,WH),P(0,N,WH-3),P(0,0,WH-3)],'#eef3fb');
+  poly([P(0,0,WH),P(N,0,WH),P(N,0,WH-3),P(0,0,WH-3)],'#dfe7f6');
+  var c0=P(0,0,0),c1=P(0,0,WH);R(c0[0],c1[1],1,c0[1]-c1[1],'#5b6a90');
+
+  /* décor mur droit (plan gy=0) */
+  plane('R',P(2.25,0,44),function(){
+    R(0,-28,22,28,'#2a2a33');R(2,-26,18,24,'#f4efe2');ballLocal(11,-14,7);T('POKÉ',11,-5,'#555','center',5);
+  });
+  plane('R',P(4.15,0,26),function(){
+    R(-1,-50,46,52,'#6b4a2f');R(0,-49,44,50,'#f3efe3');R(0,-49,44,9,'#e3000f');T('TÂCHES',22,-44.5,'#fff','center',6);
+    AG.forEach(function(a,i){
+      /* 5 barres de 7 px, pas de 8.25 px : de x=2 à x=42 dans le cadre de 44 px */
+      var x=2+i*8.25,tot=Math.max(1,a.total),fr=a.total?Math.min(1,(a.done+(a.state==='working'?a.p:0))/tot):0,h=Math.round(fr*32);
+      R(x,-37,7,32,'#ddd6c2');R(x,-5-h,7,h,a.col);
+      T(['D','B','E','3','T'][i],x+3.5,-2,'#3a3a3a','center',5);
+    });
+  });
+  var now=new Date(),hh=('0'+now.getHours()).slice(-2),mm=('0'+now.getMinutes()).slice(-2);
+  plane('R',P(7.15,0,52),function(){R(0,-12,30,12,'#111');R(1,-11,28,10,'#0b1a10');T(hh+(Math.floor(t/500)%2?':':' ')+mm,15,-6,'#41ff7a','center',7);});
+
+  /* décor mur gauche (plan gx=0) */
+  var s=sky(now.getHours());
+  plane('L',P(0,5.85,30),function(){
+    R(-2,-52,29,56,'#f4f4f4');var g=ctx.createLinearGradient(0,-50,0,0);g.addColorStop(0,s[0]);g.addColorStop(1,s[1]);ctx.fillStyle=g;ctx.fillRect(1,-50,24,48);
+    if(s[2]){[[4,-44],[15,-40],[8,-30],[20,-28],[12,-18],[5,-10]].forEach(function(p,k){R(p[0],p[1],1,1,(Math.floor(t/500)+k)%4?'#fff':'#789');});}
+    else{R(4,-40,10,3,'#fff');R(7,-43,8,3,'#fff');R(14,-24,9,3,'#fff');}
+    R(12,-50,2,48,'#f4f4f4');R(1,-27,24,2,'#f4f4f4');R(-3,3,31,3,'#dcdcdc');
+  });
+  plane('L',P(0,3.75,50),function(){
+    R(0,-28,22,28,'#2a2a33');R(2,-26,18,24,'#0b5d3b');
+    ctx.fillStyle='#8fe9b3';[[4,-22,10,1],[4,-22,1,8],[4,-14,6,1],[14,-22,1,12],[10,-10,8,1],[17,-10,1,6]].forEach(function(r){ctx.fillRect(r[0],r[1],r[2],r[3]);});
+    R(8,-19,6,6,'#111');R(15,-6,2,2,Math.floor(t/400)%2?'#ff4040':'#6a1a1a');
+  });
+  plane('L',P(0,7.9,46),function(){
+    R(0,-2,30,3,'#8a5a30');R(3,-9,7,7,'#e3000f');R(12,-7,5,5,'#3d7bff');R(19,-10,8,8,'#ffb020');
+  });
+}
+
+/* ---------- écrans ---------- */
+function screen(a,t,w,h){
+  var wk=a.state==='working';
+  if(wk&&a.id==='terminal'){ /* écran console : lignes vertes qui défilent + curseur clignotant */
+    R(0,0,w,h,'#04140a');var sc=Math.floor(t/300);
+    for(var l2=0;l2<3;l2++){R(1,1+l2*2,2+((sc+l2)*5)%(w-3),1,'#1fae55');}
+    R(1,7,1,1,'#41ff7a');if(Math.floor(t/250)%2)R(3,7,2,1,'#41ff7a');
+    return;
+  }
+  R(0,0,w,h,wk?'#0f2a47':(a.state==='done'?'#0e3a22':'#10151f'));
+  if(wk){for(var l=0;l<4;l++){var ww=3+Math.abs(Math.sin(t/380+l*1.7+a.i))*(w-5);R(1,1+l*2,ww,1,l%2?a.col:'#9cc4ff');}}
+  else if(a.state==='done'){R(w/2-2,h/2,1,1,'#41ff7a');R(w/2-1,h/2+1,1,1,'#41ff7a');R(w/2,h/2,1,1,'#41ff7a');R(w/2+1,h/2-1,1,1,'#41ff7a');R(w/2+2,h/2-2,1,1,'#41ff7a');}
+  else if(Math.floor(t/600)%2)R(1,1,2,1,'#6a7a99');
+}
+function monitorR(m,a,t){ /* bureau contre le mur droit */
+  box(m+.4,.3,.2,.12,4,16,'#666','#555','#444');
+  box(m+.1,.28,.8,.18,11,20,'#2b2b33','#1f1f27','#17171d');
+  plane('R',P(m+.1,.46,31),function(){ctx.save();ctx.translate(1,1);screen(a,t,11,9);ctx.restore();});
+  box(m+.15,.55,.7,.3,1,16,'#dfe3ea','#b8bec9','#9aa1ad');
+}
+function monitorL(m,a,t){ /* bureau contre le mur gauche */
+  box(.3,m+.4,.12,.2,4,16,'#666','#555','#444');
+  box(.28,m+.1,.18,.8,11,20,'#2b2b33','#1f1f27','#17171d');
+  plane('L',P(.46,m+.9,31),function(){ctx.save();ctx.translate(1,1);screen(a,t,11,9);ctx.restore();});
+  box(.55,m+.15,.3,.7,1,16,'#dfe3ea','#b8bec9','#9aa1ad');
+}
+function desk(gx,gy,w,d,tone){
+  var tops={w:['#d3a56b','#b58650','#946a3b'],d:['#8a6a52','#6e5240','#563f31']};var c=tops[tone||'w'];
+  box(gx,gy,w,d,16,0,c[0],c[1],c[2]);
+}
+
+/* ---------- mobilier ---------- */
+function deskDesigner(t){
+  var a=AG[0];desk(2,0,2,1);monitorR(2,a,t);
+  var b=P(3.5,.5,16);ctx.fillStyle='rgba(0,0,0,.2)';ctx.fillRect(b[0]-5,b[1]-1,10,3);
+  ballLocal(b[0],b[1]-5,5);
+  box(3.1,.15,.14,.14,3,16,'#e3000f','#b8000c','#8c0008');box(3.7,.2,.14,.14,3,16,'#3d7bff','#2a5fd0','#1c47a0');
+}
+function deskBackend(t){
+  var a=AG[1];desk(7,0,2,1);monitorR(7,a,t);
+  box(8.2,.12,.6,.6,22,16,'#3b415c','#2a2f45','#20243a');
+  plane('R',P(8.2,.72,16+20),function(){
+    for(var k=0;k<4;k++){R(2,k*5,8,3,'#171a2b');R(3,k*5+1,1,1,a.state==='working'&&(Math.floor(t/150)+k)%2?'#41ff7a':'#1d5a35');R(5,k*5+1,1,1,a.state==='working'&&(Math.floor(t/210)+k)%3?'#5aa8ff':'#1f3560');}
+  });
+}
+function deskEsp(t){
+  var a=AG[2];desk(0,2,1,2);monitorL(2,a,t);
+  box(.15,3.1,.7,.8,2,16,'#0b7a46','#08603a','#064a2c');
+  box(.35,3.4,.28,.28,2,18,'#222','#181818','#101010');
+  box(.62,3.2,.2,.3,3,18,'#2255aa','#1b4488','#133266');
+  var l=P(.25,3.2,20);R(l[0],l[1],2,2,a.state==='working'&&Math.floor(t/200)%2?'#ff4040':'#5a1717');
+}
+function deskPrint(t){
+  var a=AG[3];desk(0,6,1,2);monitorL(6,a,t);
+  box(.1,7.1,.8,.8,24,16,'#555563','#3a3a46','#2d2d38');
+  var prog=a.state==='done'?1:(a.state==='working'?a.p:0);
+  plane('L',P(.9,7.9,40),function(){
+    R(1,6,11,16,'#0e0e14');var hgt=Math.round(prog*12);R(4,22-hgt,5,hgt,'#ff7a1a');
+    var nx=a.state==='working'?Math.round(2+Math.abs(Math.sin(t/260))*6):5;R(nx,21-hgt-2,2,2,'#e0e0e0');R(1,19-hgt,11,1,'#777');
+  });
+}
+function deskTerminal(t){ /* petit bureau dans le coin gauche (case 0,8), sous aucune déco murale */
+  var a=AG[4];desk(0,8,1,1,'d');monitorL(8,a,t);
+}
+function deskBoss(t){
+  desk(4,4,2,1,'d');
+  box(4.15,4.2,.5,.6,1,16,'#f4f4ef','#d6d6cf','#bdbdb5');box(4.2,4.25,.5,.6,1,17,'#fafaf5','#dcdcd5','#c3c3bb');
+  box(5.6,4.2,.12,.12,9,16,'#444','#333','#222');box(5.45,4.2,.4,.4,3,25,'#ffd24a','#d8aa28','#b58a14');
+  box(5.1,4.55,.2,.2,3,16,'#ffc83a','#d9a420','#b88a10');
+}
+function plant(gx,gy){
+  box(gx+.25,gy+.25,.5,.5,8,0,'#a0603a','#8a4f2e','#6e3d22');
+  var c=P(gx+.5,gy+.5,8);
+  [[0,-10,9,'#2c8a4a'],[-6,-6,6,'#3cb868'],[6,-7,6,'#2c8a4a'],[0,-16,6,'#3cb868']].forEach(function(l){ctx.fillStyle=l[3];ctx.beginPath();ctx.arc(c[0]+l[0],c[1]+l[1],l[2],0,6.3);ctx.fill();});
+}
+function coffee(){
+  box(8.2,5.2,.6,.6,22,0,'#f2f2f2','#d6d6d6','#b9b9b9');
+  plane('L',P(8.8,5.8,16),function(){});
+  var c=P(8.5,5.5,22);R(c[0]-2,c[1]-1,4,2,'#e3000f');
+}
+function chair(sx,sy,col){
+  box(sx+.45,sy+.45,.1,.1,8,0,'#999','#777','#555');
+  box(sx+.18,sy+.18,.64,.64,3,8,col,'#2a2a38','#1f1f2b');
+}
+
+/* ---------- avatars ---------- */
+function drawAvatar(w,ax,ay,dir,pose,t,typing){
+  var front=(dir==='se'||dir==='sw'),fx=(dir==='se'||dir==='ne')?1:-1;
+  var f=Math.floor(t/130)%4,lL=0,lR=0,sw=0,bL=0,bR=0;
+  if(pose==='walk'&&!reduce){lL=f===1?2:0;lR=f===3?2:0;sw=(f%2)?1:-1;}
+  if(typing&&!reduce){bL=Math.floor(t/110)%2?-1:0;bR=Math.floor(t/110)%2?0:-1;}
+  ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(ax,ay,8,3.5,0,0,6.3);ctx.fill();
+  function body(flat){
+    function C(c){return flat||c;}
+    if(pose==='stand'||pose==='walk'){
+      R(ax-4,ay-10,3,8-lL,C(w.pants));R(ax-5,ay-2-lL,4,2,C('#1a1a22'));
+      R(ax+1,ay-10,3,8-lR,C(w.pants));R(ax+1,ay-2-lR,4,2,C('#1a1a22'));
+    }else if(pose==='sitfront'){
+      R(ax-5,ay-10,10,4,C(w.pants));R(ax-5,ay-7,3,6,C(w.pants));R(ax+2,ay-7,3,6,C(w.pants));
+      R(ax-6,ay-2,4,2,C('#1a1a22'));R(ax+2,ay-2,4,2,C('#1a1a22'));
+    }
+    var army=(pose==='stand'||pose==='walk')?-19:-19;
+    if(pose==='sitback'){
+      R(ax-7,ay-19+bL,2,8,C(w.shirt));R(ax-7,ay-12+bL,2,2,C(w.skin));
+      R(ax+5,ay-19+bR,2,8,C(w.shirt));R(ax+5,ay-12+bR,2,2,C(w.skin));
+    }else{
+      R(ax-7,army+(pose==='walk'?sw:0),2,9,C(w.shirt));R(ax-7,army+9+(pose==='walk'?sw:0),2,2,C(w.skin));
+      R(ax+5,army-(pose==='walk'?sw:0),2,9,C(w.shirt));R(ax+5,army+9-(pose==='walk'?sw:0),2,2,C(w.skin));
+    }
+    R(ax-5,ay-20,10,10,C(w.shirt));
+    if(front&&!flat){R(ax-2,ay-20,4,1,'#fff');R(ax-5,ay-12,10,2,'rgba(0,0,0,.18)');}
+    R(ax-4,ay-29,8,9,C(front?w.skin:w.hair));
+    if(front){
+      R(ax-5,ay-31,10,4,C(w.hair));R(ax-5,ay-28,1,4,C(w.hair));R(ax+4,ay-28,1,4,C(w.hair));
+      if(!flat){R(ax-2+fx,ay-25,1,2,'#111');R(ax+1+fx,ay-25,1,2,'#111');R(ax-1+fx,ay-22,2,1,'#b5523b');}
+    }else{R(ax-5,ay-31,10,10,C(w.hair));R(ax-1,ay-21,2,1,C(w.skin));}
+    if(!flat){
+      if(w.acc==='cap'){R(ax-5,ay-33,10,3,'#e3000f');if(front)R(ax-5+(fx>0?2:-3),ay-30,8,2,'#b8000c');}
+      if(w.acc==='glasses'&&front){R(ax-3+fx,ay-26,3,3,'rgba(255,255,255,.0)');ctx.strokeStyle='#111';ctx.lineWidth=1;ctx.strokeRect(ax-3+fx+.5,ay-26+.5,3,3);ctx.strokeRect(ax+1+fx+.5,ay-26+.5,3,3);}
+      if(w.acc==='phones'){R(ax-6,ay-27,2,5,'#222');R(ax+4,ay-27,2,5,'#222');R(ax-5,ay-32,10,1,'#222');}
+      if(w.acc==='helmet'){R(ax-5,ay-34,10,4,'#ffc83a');R(ax-1,ay-35,2,1,'#ffc83a');}
+      if(w.acc==='crown'){R(ax-4,ay-34,8,3,'#ffd24a');R(ax-4,ay-36,2,2,'#ffd24a');R(ax-1,ay-36,2,2,'#ffd24a');R(ax+2,ay-36,2,2,'#ffd24a');R(ax-1,ay-33,2,1,'#e3000f');}
+      if(w.acc==='beanie'){R(ax-5,ay-34,10,4,'#2e3440');R(ax-5,ay-31,10,2,'#138a80');R(ax-1,ay-36,2,2,'#3fe0d0');} /* bonnet du terminal */
+    }
+  }
+  var offs=[[-1,0],[1,0],[0,-1],[0,1]];
+  offs.forEach(function(o){ctx.save();ctx.translate(o[0],o[1]);body('#0c1018');ctx.restore();});
+  body();
+}
+
+/* ---------- bulles ---------- */
+var bubbles=[];
+function say(who,text){bubbles.push({who:who,text:text,t0:performance.now(),ttl:4200});addLog(who,text);}
+function wrap(text,maxw){
+  ctx.font="8px 'Pixelify Sans',monospace";var words=sansLig(text).split(' '),lines=[],cur='';
+  words.forEach(function(w){var tst=cur?cur+' '+w:w;if(ctx.measureText(tst).width>maxw&&cur){lines.push(cur);cur=w;}else cur=tst;});
+  if(cur)lines.push(cur);
+  if(lines.length>2){lines=lines.slice(0,2);lines[1]=lines[1].replace(/.{1}$/,'…');}
+  return lines;
+}
+function rrect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
+function anchorOf(who){
+  if(who===CO)return P(CO.x+.5,CO.y+.5,0);
+  return P(who.seat[0]+.5,who.seat[1]+.5,0);
+}
+function drawBubbles(now){
+  var all=[CO].concat(AG);
+  all.forEach(function(who){
+    var mine=bubbles.filter(function(b){return b.who===who&&now-b.t0<b.ttl;});
+    /* si l'agent travaille, on monte les bulles pour laisser la place au rond de chargement */
+    var an=anchorOf(who),yTop=an[1]-(auTravail(who)?66:42);
+    for(var i=mine.length-1;i>=0;i--){
+      var b=mine[i],age=now-b.t0,al=age>b.ttl-600?Math.max(0,(b.ttl-age)/600):1;
+      var lines=wrap(b.text,84);ctx.font="8px 'Pixelify Sans',monospace";
+      var tw=0;lines.forEach(function(l){tw=Math.max(tw,ctx.measureText(l).width);});
+      ctx.font="bold 8px 'Pixelify Sans',monospace";tw=Math.max(tw,ctx.measureText(sansLig(who.id)).width);
+      var bw=Math.ceil(tw)+10,bh=(lines.length+1)*9+5,bx=Math.max(3,Math.min(W-bw-3,an[0]-bw/2)),by=yTop-bh;
+      ctx.globalAlpha=al;
+      rrect(bx+.5,by+.5,bw,bh,4);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#1b1b1b';ctx.lineWidth=1;ctx.stroke();
+      if(i===mine.length-1){ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(an[0]-3,by+bh);ctx.lineTo(an[0]+3,by+bh);ctx.lineTo(an[0],by+bh+4);ctx.fill();ctx.strokeStyle='#1b1b1b';ctx.beginPath();ctx.moveTo(an[0]-3,by+bh);ctx.lineTo(an[0],by+bh+4);ctx.lineTo(an[0]+3,by+bh);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(an[0]-2,by+bh-1,5,2);}
+      ctx.textAlign='left';ctx.textBaseline='top';
+      ctx.font="bold 8px 'Pixelify Sans',monospace";ctx.fillStyle=who.shirt;ctx.fillText(sansLig(who.id),bx+5,by+3);
+      ctx.font="8px 'Pixelify Sans',monospace";ctx.fillStyle='#111';
+      lines.forEach(function(l,k){ctx.fillText(l,bx+5,by+12+k*9);});
+      ctx.globalAlpha=1;yTop=by-3;
+    }
+  });
+  /* indicateur de frappe */
+  AG.forEach(function(a){
+    if(a.state!=='working')return;
+    if(bubbles.some(function(b){return b.who===a&&now-b.t0<b.ttl;}))return;
+    var an=anchorOf(a),x=an[0]-9,y=an[1]-74; /* au-dessus du rond de chargement (haut du rond à an[1]-61) */
+    rrect(x+.5,y+.5,18,9,3);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#1b1b1b';ctx.stroke();
+    var n=Math.floor(now/250)%3;for(var k=0;k<3;k++)R(x+4+k*4,y+4,2,2,k===n?'#111':'#aaa');
+  });
+}
+/* vrai si le personnage travaille (le coordinateur seulement en mode direct) */
+function auTravail(w){return w===CO?LIVE.coWork:w.state==='working';}
+/* rond de chargement au-dessus de la tête d'un agent qui travaille (ou du coordinateur, à sa position réelle) */
+function drawSpinner(a,now){
+  if(!auTravail(a))return;
+  /* rond de rayon 8 centré 50 px au-dessus des pieds : occupe de an[1]-61 à an[1]-39 (tête + accessoire s'arrêtent à an[1]-36) */
+  var an=anchorOf(a),cx=an[0],cy=an[1]-50,r=8,TAU=Math.PI*2;
+  var p=Math.max(0,Math.min(1,a.p||0));
+  ctx.save();ctx.lineCap='butt';
+  /* contour sombre + centre sombre pour la lisibilité sur le sol clair */
+  ctx.beginPath();ctx.arc(cx,cy,r+3,0,TAU);ctx.fillStyle='rgba(8,16,28,.85)';ctx.fill();
+  /* anneau de fond */
+  ctx.beginPath();ctx.arc(cx,cy,r,0,TAU);ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=3;ctx.stroke();
+  /* progression de la tâche (petit arc blanc intérieur, part du haut) */
+  if(p>0){ctx.beginPath();ctx.arc(cx,cy,4,-Math.PI/2,-Math.PI/2+p*TAU);ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();}
+  /* arc qui tourne par crans (effet pixel), fixe si animations réduites */
+  var ang=reduce?-Math.PI/2:(Math.floor(now/80)%12)*(TAU/12);
+  ctx.beginPath();ctx.arc(cx,cy,r,ang,ang+TAU*0.3);ctx.strokeStyle=a.col;ctx.lineWidth=3;ctx.stroke();
+  ctx.restore();
+}
+function drawTags(){
+  [CO].concat(AG).forEach(function(w){
+    var an=anchorOf(w);ctx.font="5px 'Silkscreen',monospace";var tw=ctx.measureText(sansLig(w.id)).width+6;
+    ctx.fillStyle='rgba(8,16,28,.78)';ctx.fillRect(Math.round(an[0]-tw/2),an[1]+5,Math.ceil(tw),8);
+    T(w.id,an[0],an[1]+9.5,w.col,'center',5);
+  });
+}
+
+/* ---------- déplacement ---------- */
+var BL={};
+['2,0','3,0','7,0','8,0','0,2','0,3','0,6','0,7','4,4','5,4','8,3','8,7','8,5','2,1','7,1','1,2','1,6','0,8','1,8'].forEach(function(k){BL[k]=1;});
+function bfs(s,g){
+  var key=function(p){return p[0]+','+p[1];},q=[s],prev={};prev[key(s)]=null;
+  while(q.length){var c=q.shift();if(c[0]===g[0]&&c[1]===g[1])break;
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){var n=[c[0]+d[0],c[1]+d[1]];if(n[0]<0||n[1]<0||n[0]>=N||n[1]>=N)return;var k=key(n);if(k in prev||BL[k])return;prev[k]=c;q.push(n);});}
+  var path=[],c2=g;if(!(key(g) in prev))return [];
+  while(c2&&key(c2)!==key(s)){path.unshift(c2);c2=prev[key(c2)];}
+  return path;
+}
+
+/* ---------- logique ---------- */
+var listEl=document.getElementById('list'),logEl=document.getElementById('log');
+var ALL=[CO].concat(AG);
+ALL.forEach(function(w,i){
+  var d=document.createElement('div');d.className='row';
+  d.innerHTML='<canvas width="16" height="16" id="hd'+i+'"></canvas><div><div class="nm"><span style="color:'+w.col+'">'+w.id+'</span><span class="pill idle" id="pl'+i+'">REPOS</span></div><div class="st" id="tk'+i+'"></div><div class="bar"><i id="br'+i+'" style="--c:'+w.col+'"></i></div>'+(w===CO?'':'<button id="bt'+i+'">DONNER UNE TÂCHE</button>')+'</div>';
+  listEl.appendChild(d);
+  var c=d.querySelector('canvas').getContext('2d');
+  function r(x,y,wd,h,col){c.fillStyle=col;c.fillRect(x,y,wd,h);}
+  r(0,0,16,16,'#12293f');r(2,12,12,4,w.shirt);r(4,4,8,8,w.skin);r(3,2,10,4,w.hair);r(3,5,1,4,w.hair);r(12,5,1,4,w.hair);r(6,8,1,2,'#111');r(9,8,1,2,'#111');
+  if(w.acc==='cap')r(3,1,10,3,'#e3000f');if(w.acc==='helmet')r(3,0,10,4,'#ffc83a');if(w.acc==='crown'){r(4,0,8,3,'#ffd24a');}
+  if(w.acc==='phones'){r(2,6,2,4,'#222');r(12,6,2,4,'#222');}if(w.acc==='glasses'){c.strokeStyle='#111';c.strokeRect(5.5,7.5,3,3);c.strokeRect(9.5,7.5,3,3);}
+  if(w.acc==='beanie'){r(3,1,10,3,'#2e3440');r(3,3,10,1,'#138a80');r(7,0,2,1,'#3fe0d0');}
+  if(w!==CO)document.getElementById('bt'+i).onclick=function(){dispatch([{a:w,tasks:[w.tasks[w.tk++%w.tasks.length]]}]);};
+});
+function addLog(who,text){
+  var t=new Date(),s=('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2)+':'+('0'+t.getSeconds()).slice(-2);
+  var li=document.createElement('li');li.innerHTML='<time>'+s+'</time><span><b style="color:'+(who.shirt||'#555')+'">'+who.id+'</b> : '+text.replace(/</g,'&lt;')+'</span>';
+  logEl.insertBefore(li,logEl.firstChild);while(logEl.children.length>50)logEl.removeChild(logEl.lastChild);
+}
+function dispatch(jobs){jobs.forEach(function(j){JOBS.push(j);pendingVisits++;});}
+function give(a,tasks){
+  var idle=(a.state!=='working'&&!a.queue.length);
+  if(idle){a.total=0;a.done=0;}
+  a.total+=tasks.length;tasks.forEach(function(t){a.queue.push(t);});
+  a.idleIn=undefined;
+  if(a.state!=='working'&&!a.wait)begin(a);
+}
+function begin(a){
+  var t=a.queue.shift();if(!t){a.state='idle';a.task='Au repos';a.p=0;return;}
+  a.state='working';a.task=t;a.p=0;
+  /* pendant la simulation, l'agent courant a une durée fixe de 2,5 s (sinon durée au hasard) */
+  a.dur=(DEMO.actif&&a===AG[DEMO.i])?2.5:3+Math.random()*3;
+}
+document.getElementById('demo').onclick=function(){
+  if(DEMO.actif||auditRunning)return; /* pas deux simulations, ni pendant un audit */
+  if(directOccupe()){addLog(CO,'Mode direct en cours : simulation ignorée.');return;}
+  DEMO.i=0;DEMO.lance=false;DEMO.actif=true;
+  say(CO,'Simulation : chacun son tour !');
+};
+document.getElementById('audit').onclick=function(){
+  if(auditRunning||DEMO.actif)return;
+  if(directOccupe()){addLog(CO,'Mode direct en cours : audit ignoré.');return;}
+  auditRunning=true;
+  say(CO,'Équipe, audit général ! Je passe vous voir un par un.');
+  dispatch(AG.map(function(a){return {a:a,tasks:a.tasks.slice(),msg:'audit complet, '+a.tasks.length+' vérifications'};}));
+};
+document.getElementById('rest').onclick=function(){
+  JOBS=[];pendingVisits=0;auditRunning=false;
+  DEMO.actif=false;DEMO.lance=false; /* arrête aussi la simulation */
+  /* le mode direct est aussi remis au repos : le prochain etat.js lu relancera ce qui travaille vraiment */
+  AG.forEach(function(a){a.queue=[];a.state='idle';a.task='Au repos';a.p=0;a.wait=0;a.total=0;a.done=0;a.live=false;a.liveDemande=false;});
+  LIVE.coWork=false;CO.p=0;
+  /* visite en cours (en route ou en train de parler) annulée : retour au bureau */
+  if(CO.cur){CO.cur=null;CO.mode='walk';CO.path=bfs([Math.round(CO.x),Math.round(CO.y)],[4,3]);}
+  say(CO,'Pause café pour tout le monde.');
+};
+
+/* ---------- mode direct (fichier etat.js écrit par un hook Claude Code) ---------- */
+var H24=24*3600*1000,H3=3*3600*1000;
+/* vrai s'il y a du travail réel en cours (ou demandé) : on ne mélange pas avec la simulation ou l'audit */
+function directOccupe(){return LIVE.coWork||AG.some(function(a){return a.live||a.liveDemande;});}
+/* « working » depuis moins de 3 h, sinon on considère que c'est un reste oublié (idle) */
+function travaille(info,now){return !!(info&&info.etat==='working'&&!(info.depuis&&now-info.depuis>H3));}
+function texteTache(info){var t=(info&&info.tache)?String(info.tache):'Travail en cours';return t.length>120?t.slice(0,119)+'…':t;}
+/* l'agent a fini pour de vrai : même fin qu'en simulation (« Terminé », puis retour au repos) */
+function finirDirect(a){
+  a.live=false;a.state='done';a.done++;a.wait=0;say(a,'✓ Terminé !');
+  if(a.queue.length)a.wait=1.4; /* tâche de simulation restée en attente : elle reprendra après la pause */
+  else a.idleIn=4;
+}
+/* met l'agent « AU TRAVAIL » en direct (rond immédiat). Appelée dès la lecture de etat.js, puis à l'arrivée du coordinateur :
+   ne fait rien si l'agent est déjà suivi, ou s'il a déjà fini entre-temps (pas de double « Terminé ») */
+function demarrerDirect(a){
+  if(a.live||!a.liveWork)return;
+  a.queue=[];a.wait=0;a.idleIn=undefined;a.total=1;a.done=0;a.p=0;a.task=a.liveTache;a.state='working';
+  a.live=true; /* la tâche ne se termine plus sur minuterie, seulement quand etat.js dit « idle » */
+}
+/* applique le contenu de etat.js (E = null si le fichier est absent) */
+function appliquerEtat(E){
+  var now=Date.now(),ok=!!(E&&E.agents&&typeof E.maj==='number'&&now-E.maj<H24);
+  LIVE.actif=ok;
+  var b=document.getElementById('live');
+  b.className='live '+(ok?'on':'off');b.textContent=ok?'● EN DIRECT':'SIMULATION';
+  /* sans fichier (ou fichier trop vieux), tout ce qui suivait le direct est considéré comme terminé */
+  AG.forEach(function(a){
+    var info=ok?E.agents[a.id]:null;
+    a.liveWork=travaille(info,now);
+    if(a.liveWork)a.liveTache=texteTache(info);
+    if(a.liveWork){
+      if(a.live)a.task=a.liveTache; /* le texte suit la tâche du fichier */
+      else{
+        demarrerDirect(a); /* rond tout de suite, sans attendre la marche du coordinateur */
+        /* la visite du coordinateur (avec son dialogue) reste jouée, une seule fois */
+        if(!a.liveDemande){a.liveDemande=true;dispatch([{a:a,tasks:[a.liveTache],msg:a.liveTache,live:true}]);}
+      }
+    }else if(a.live){
+      finirDirect(a);
+    }
+  });
+  var ci=ok?E.agents.coordinateur:null;
+  if(travaille(ci,now)){LIVE.coWork=true;LIVE.coTache=texteTache(ci);}
+  else if(LIVE.coWork){LIVE.coWork=false;CO.p=0;say(CO,'J\'ai fini, à toi !');}
+}
+/* fetch() est bloqué en file:// : on recharge etat.js avec une balise <script> (paramètre t pour éviter le cache) */
+function lireEtat(){
+  if(LIVE.script&&LIVE.script.parentNode)LIVE.script.parentNode.removeChild(LIVE.script);
+  window.POKESERRE_ETAT=undefined; /* évite de relire une ancienne valeur si le fichier est vide ou cassé */
+  var s=document.createElement('script');
+  s.src='etat.js?t='+Date.now();
+  s.onload=function(){appliquerEtat(window.POKESERRE_ETAT||null);suivante(1500);};
+  /* pas de fichier = simulation ; sur un vrai serveur web on relit moins souvent pour ne pas multiplier les erreurs 404 */
+  s.onerror=function(){appliquerEtat(null);suivante(location.protocol==='file:'?1500:30000);};
+  LIVE.script=s;document.head.appendChild(s);
+}
+function suivante(ms){setTimeout(lireEtat,ms);}
+
+function updateCO(dt){
+  var c=CO;
+  if(LIVE.coWork)c.p=(c.p+dt/3)%1; /* rond de chargement du coordinateur en mode direct */
+  if(c.mode==='seated'){
+    c.task='À son bureau';
+    if(JOBS.length){c.cur=JOBS.shift();c.path=bfs([c.x,c.y],c.cur.a.stand);c.mode='walk';}
+  }
+  if(c.mode==='walk'){
+    c.task=c.cur?'Va voir '+c.cur.a.id:'Retourne à son bureau';
+    if(!c.path.length){
+      if(c.cur){c.mode='talk';c.talkT=0;c.spoke=false;c.gave=false;
+        var a=c.cur.a,dx=a.seat[0]-c.x,dy=a.seat[1]-c.y;c.dir=dx>0?'se':dx<0?'nw':dy>0?'sw':'ne';}
+      else{c.mode='seated';c.x=4;c.y=3;c.dir='sw';}
+    }else{
+      var tg=c.path[0],dx2=tg[0]-c.x,dy2=tg[1]-c.y,d=Math.hypot(dx2,dy2),st=2.4*dt;
+      if(Math.abs(dx2)>Math.abs(dy2))c.dir=dx2>0?'se':'nw';else c.dir=dy2>0?'sw':'ne';
+      if(d<=st){c.x=tg[0];c.y=tg[1];c.path.shift();}else{c.x+=dx2/d*st;c.y+=dy2/d*st;}
+    }
+  }
+  if(c.mode==='talk'){
+    c.task='Parle à '+c.cur.a.id;c.talkT+=dt;
+    if(!c.spoke&&c.talkT>0.2){c.spoke=true;say(c,c.cur.a.id+', '+(c.cur.msg||c.cur.tasks[0])+'.');}
+    if(!c.gave&&c.talkT>1.3){c.gave=true;var a2=c.cur.a;say(a2,['Bien reçu !','Je m\'y mets !','Compris !'][a2.i%3]);
+      if(c.cur.live){a2.liveDemande=false;demarrerDirect(a2);}else give(a2,c.cur.tasks); /* job direct : suit le vrai travail au lieu d'une minuterie */
+      pendingVisits--;}
+    if(c.talkT>2.6){
+      c.cur=null;
+      if(JOBS.length){c.cur=JOBS.shift();c.path=bfs([Math.round(c.x),Math.round(c.y)],c.cur.a.stand);}
+      else c.path=bfs([Math.round(c.x),Math.round(c.y)],[4,3]);
+      c.mode='walk';
+    }
+  }
+}
+function updateAG(dt){
+  AG.forEach(function(a){
+    if(a.live){
+      /* mode direct : pas de fin sur minuterie, le rond tourne en boucle jusqu'à ce que etat.js dise « idle » */
+      a.state='working';a.p=(a.p+dt/3)%1;
+    }else if(a.state==='working'){
+      a.p+=dt/a.dur;
+      if(a.p>=1){a.p=1;a.state='done';a.done++;say(a,'✓ Terminé !');a.wait=1.4;}
+    }else if(a.wait>0){
+      a.wait-=dt;
+      if(a.wait<=0){a.wait=0;if(a.queue.length)begin(a);else{a.idleIn=4;}}
+    }else if(a.state==='done'&&a.idleIn!==undefined){
+      a.idleIn-=dt;if(a.idleIn<=0){a.idleIn=undefined;a.state='idle';a.task='Au repos';a.p=0;}
+    }
+  });
+  /* simulation : un seul agent à la fois, dans l'ordre de AG */
+  if(DEMO.actif){
+    var da=AG[DEMO.i];
+    if(!DEMO.lance){
+      /* on donne directement la tâche suivante de sa liste (sans faire marcher le coordinateur) */
+      DEMO.lance=true;
+      give(da,[da.tasks[da.tk++%da.tasks.length]]);
+    }else if(da.state!=='working'&&!da.wait&&!da.queue.length){
+      /* l'agent courant a fini (rond arrêté, pause « Terminé » passée) : au suivant */
+      DEMO.i++;DEMO.lance=false;
+      if(DEMO.i>=AG.length){DEMO.actif=false;say(CO,'Simulation terminée : les 5 agents sont passés.');}
+    }
+  }
+  if(auditRunning&&pendingVisits===0&&!JOBS.length&&CO.mode==='seated'&&AG.every(function(a){return a.state!=='working'&&!a.queue.length&&!a.wait;})){
+    auditRunning=false;say(CO,'Audit terminé ! Rapport prêt (simulation).');
+  }
+}
+
+/* ---------- rendu ---------- */
+var last=performance.now();
+function frame(now){
+  var dt=Math.min(0.2,(now-last)/1000);last=now;
+  updateCO(dt);updateAG(dt);
+  ctx.fillStyle='#0a1520';ctx.fillRect(0,0,W,H);
+  drawRoom(now);
+  var items=[
+    {k:3.5,f:function(){deskDesigner(now);}},
+    {k:8.5,f:function(){deskBackend(now);}},
+    {k:3.5,f:function(){deskEsp(now);}},
+    {k:7.5,f:function(){deskPrint(now);}},
+    {k:8.5,f:function(){deskTerminal(now);}},
+    {k:9.5,f:function(){deskBoss(now);}},
+    {k:8.6,f:function(){plant(8,3);}},
+    {k:15.6,f:function(){plant(8,7);}},
+    {k:13.6,f:function(){coffee();}}
+  ];
+  AG.forEach(function(a){
+    var sx=a.seat[0],sy=a.seat[1],an=P(sx+.5,sy+.5,0);
+    items.push({k:sx+sy+.55,f:function(){chair(sx,sy,'#3a3a4e');}});
+    items.push({k:sx+sy+.6,f:function(){drawAvatar(a,an[0],an[1],a.face,'sitback',now,a.state==='working');}});
+  });
+  if(CO.mode==='seated'){
+    items.push({k:CO.x+CO.y+.55,f:function(){chair(4,3,'#5a3aa8');}});
+    items.push({k:CO.x+CO.y+.6,f:function(){var an=P(4.5,3.5,0);drawAvatar(CO,an[0],an[1],'sw','sitfront',now,false);}});
+  }else{
+    items.push({k:4+3+.55,f:function(){chair(4,3,'#5a3aa8');}});
+    items.push({k:CO.x+CO.y+.6,f:function(){var an=P(CO.x+.5,CO.y+.5,0);drawAvatar(CO,an[0],an[1],CO.dir,CO.mode==='walk'?'walk':'stand',now,false);}});
+  }
+  items.sort(function(a,b){return a.k-b.k;});
+  items.forEach(function(it){it.f();});
+  ALL.forEach(function(a){drawSpinner(a,now);}); /* ronds de chargement (le coordinateur seulement en mode direct) */
+  drawBubbles(now);
+  /* panneau d'équipe */
+  ALL.forEach(function(w,i){
+    var pl=document.getElementById('pl'+i),st,cls;
+    if(w===CO&&LIVE.coWork){st='AU TRAVAIL';cls='working';} /* coordinateur en direct */
+    else if(w===CO){st=CO.mode==='seated'?'REPOS':(CO.mode==='talk'?'PARLE':'EN ROUTE');cls=CO.mode==='seated'?'idle':'walk';}
+    else{st=w.state==='working'?'AU TRAVAIL':(w.state==='done'?'TERMINÉ':'REPOS');cls=w.state;}
+    pl.className='pill '+cls;pl.textContent=st;
+    document.getElementById('tk'+i).textContent=((w===CO&&LIVE.coWork)?LIVE.coTache:w.task)+(w.queue&&w.queue.length?' (+'+w.queue.length+')':'');
+    var pct=w===CO?(LIVE.coWork?Math.round(CO.p*100):(CO.mode==='seated'?0:100)):(w.total?Math.round(Math.min(1,(w.done+(w.state==='working'?w.p:0))/w.total)*100):0);
+    document.getElementById('br'+i).style.width=pct+'%';
+  });
+  var d=new Date();document.getElementById('clock').textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  requestAnimationFrame(frame);
+}
+addLog(CO,'Bienvenue dans la salle des agents. Clique sur « Lancer l\'audit ».');
+if(document.fonts&&document.fonts.load){document.fonts.load("8px 'Pixelify Sans'");document.fonts.load("bold 8px 'Pixelify Sans'");document.fonts.load("6px 'Silkscreen'");}
+requestAnimationFrame(frame);
+lireEtat(); /* première lecture de etat.js, puis toutes les 1,5 s */
+})();
+</script>
+{% endraw %}
